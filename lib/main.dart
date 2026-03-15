@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
       //home: const MyHomePage(title: 'Flutter Demo Home Page'),
-      home: MainScreen(), // start with login screen
+      home: LoginScreen(), // start with login screen
     );
   }
 }

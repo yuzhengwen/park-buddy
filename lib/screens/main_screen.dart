@@ -12,10 +12,10 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
   // List of widgets for each tab
-  static List<Widget> _widgetOptions = <Widget>[
+  List<Widget> _widgetOptions = <Widget>[
+    MyParkingTab(),
     MapTab(),
     ProfileTab(),
-    MyParkingTab(),
   ];
 
   void _onItemTapped(int index) {
