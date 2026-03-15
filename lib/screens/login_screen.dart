@@ -17,7 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
       OAuthProvider.github,
       redirectTo: kIsWeb
           ? null
-          : 'my.scheme://my-host', // Optionally set the redirect link to bring back the user via deeplink.
+          : 'com.parkingbuddy.app://auth-callback', // Optionally set the redirect link to bring back the user via deeplink.
       authScreenLaunchMode: kIsWeb
           ? LaunchMode.platformDefault
           : LaunchMode
