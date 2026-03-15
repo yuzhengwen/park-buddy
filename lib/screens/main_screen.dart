@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../tabs/map_tab.dart';
+import '../tabs/profile_tab.dart';
+import '../tabs/my_parking_tab.dart';
 
 class MainScreen extends StatefulWidget {
   @override
@@ -9,10 +12,10 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
   // List of widgets for each tab
-  static const List<Widget> _widgetOptions = <Widget>[
-    Center(child: Text('Home Tab', style: TextStyle(fontSize: 24))),
-    Center(child: Text('Map Tab', style: TextStyle(fontSize: 24))),
-    Center(child: Text('Profile Tab', style: TextStyle(fontSize: 24))),
+  static List<Widget> _widgetOptions = <Widget>[
+    MapTab(),
+    ProfileTab(),
+    MyParkingTab(),
   ];
 
   void _onItemTapped(int index) {
