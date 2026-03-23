@@ -7,6 +7,7 @@ import '../models/car_park.dart';
 import '../services/api_controller.dart';
 import '../services/location_service.dart';
 import '../services/location_search_service.dart';
+import 'start_parking_session_screen.dart';
 
 class CarParkFinderPage extends StatefulWidget {
   const CarParkFinderPage({
@@ -504,6 +505,17 @@ class _CarParkFinderPageState extends State<CarParkFinderPage> {
                           heroTag: 'locateMe',
                           onPressed: _recenterOnUser,
                           child: const Icon(Icons.gps_fixed),
+                        ),
+                        const SizedBox(height: 8),
+                        FloatingActionButton.extended(
+                          heroTag: 'parkNow',
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(
+                              builder: (context) => StartParkingSessionScreen(),
+                            ));
+                          },
+                          label: const Text('Park Now'),
+                          icon: const Icon(Icons.local_parking),
                         ),
                       ],
                     ),
