@@ -485,8 +485,10 @@ class _CarParkFinderPageState extends State<CarParkFinderPage> {
                   ),
                   const SizedBox(height: 12),
                   Align(
-                    alignment: Alignment.centerRight,
+                    alignment: Alignment.bottomRight,
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         FloatingActionButton.small(

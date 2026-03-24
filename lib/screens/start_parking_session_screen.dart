@@ -34,12 +34,13 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
     super.dispose();
   }
 
-  void _confirm() {
-    // TODO: go to next screen
+  void _confirm(BuildContext context) {
+    // TODO: update the database
+    Navigator.pop(context);
   }
 
-  Future<void> _editLocation() async {
-    // TODO: launch map and carpark picker
+  Future<void> _editLocation(BuildContext context) async {
+    // TODO: launch location edit screen
   }
 
   Future<void> _takeParkingPicture({
@@ -84,28 +85,16 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
               children: <Widget>[
                 // 1. Carpark location
                 ListTile(
-                  leading: const SizedBox(
-                    height: 48,
-                    width: 48,
-                    child: Icon(Icons.location_on),
-                  ),
+                  leading: const ListIcon(Icons.location_on),
                   title: const Text('Location'),
                   subtitle: Text(_selectedLocation ?? 'Not selected'),
                   isThreeLine: true,
-                  trailing: const SizedBox(
-                    height: 48,
-                    width: 48,
-                    child: Icon(Icons.edit)
-                  ),
-                  onTap: _editLocation,
+                  trailing: const ListIcon(Icons.edit),
+                  onTap: () => _editLocation(context),
                 ),
                 // 2. Car selection
                 ListTile(
-                  leading: const SizedBox(
-                    height: 48,
-                    width: 48,
-                    child: Icon(Icons.directions_car)
-                  ),
+                  leading: const ListIcon(Icons.directions_car),
                   title: DropdownMenu(
                     width: double.infinity,
                     hintText: 'Car',
@@ -119,11 +108,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
                 ),
                 // 3. Session name
                 ListTile(
-                  leading: const SizedBox(
-                    height: 48,
-                    width: 48,
-                    child: Icon(Icons.title)
-                  ),
+                  leading: const ListIcon(Icons.title),
                   title: TextField(
                     controller: _sessionNameController,
                     decoration: const InputDecoration(
@@ -135,11 +120,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
                 ),
                 // 4. Session description
                 ListTile(
-                  leading: const SizedBox(
-                    height: 48,
-                    width: 48,
-                    child: Icon(Icons.notes)
-                  ),
+                  leading: const ListIcon(Icons.notes),
                   title: TextField(
                     controller: _sessionDescController,
                     decoration: const InputDecoration(
@@ -152,11 +133,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
                 ),
                 // 5. Rate threshold
                 ListTile(
-                  leading: const SizedBox(
-                    height: 48,
-                    width: 48,
-                    child: Icon(Icons.attach_money)
-                  ),
+                  leading: const ListIcon(Icons.attach_money),
                   title: TextField(
                     controller: _rateThresholdController,
                     decoration: const InputDecoration(
@@ -169,11 +146,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
                 ),
                 // 6. Upload parking photo
                 ListTile(
-                  leading: const SizedBox(
-                    height: 48,
-                    width: 48,
-                    child: Icon(Icons.camera_alt)
-                  ),
+                  leading: const ListIcon(Icons.camera_alt),
                   title: const Text('Photo'),
                   subtitle: const Text('Tap to take photo'),
                   onTap: () { _takeParkingPicture(context: context); },
@@ -197,12 +170,14 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
           // Confirmation button
           SafeArea(
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: SizedBox(
                 height: 48,
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: _canSubmit() ? _confirm : null,
+                  onPressed: _canSubmit()
+                      ? () => _confirm(context)
+                      : null,
                   child: Text('Create session'),
                 ),
               ),
@@ -235,6 +210,22 @@ class LocationField extends StatelessWidget {
           const Icon(Icons.edit),
         ],
       ),
+    );
+  }
+}
+
+// Icon container for form fields
+class ListIcon extends StatelessWidget {
+  final IconData icon;
+
+  const ListIcon(this.icon, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      width: 48,
+      child: Icon(icon)
     );
   }
 }
