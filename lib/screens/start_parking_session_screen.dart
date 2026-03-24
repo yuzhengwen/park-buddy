@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'location_picker_screen.dart';
 
 class StartParkingSessionScreen extends StatefulWidget {
   const StartParkingSessionScreen({super.key});
@@ -40,7 +41,16 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
   }
 
   Future<void> _editLocation(BuildContext context) async {
-    // TODO: launch location edit screen
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => CarparkPickerScreen())
+    ) as CarparkLocation?;
+
+    if (result != null) {
+      setState(() {
+        _selectedLocation = result.carparkName;
+      });
+    }
   }
 
   Future<void> _takeParkingPicture({
