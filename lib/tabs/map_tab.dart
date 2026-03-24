@@ -9,6 +9,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
+import '../screens/start_parking_session_screen.dart';
+
 class MapTab extends StatefulWidget {
   const MapTab({super.key});
 
@@ -661,6 +663,19 @@ class _MapTabState extends State<MapTab> {
                 ? null
                 : () => _moveMapToPosition(position.latitude, position.longitude),
             child: const Icon(Icons.my_location),
+          ),
+        ),
+        Positioned(
+          right: 16,
+          bottom: 160,
+          child: FloatingActionButton.extended(
+            heroTag: 'parkNow',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => StartParkingSessionScreen())
+            ),
+            label: const Text('Park Now'),
+            icon: const Icon(Icons.local_parking),
           ),
         ),
         Positioned(
