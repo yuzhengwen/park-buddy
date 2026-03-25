@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'carpark_picker_screen.dart';
+import 'package:latlong2/latlong.dart';
 
 class StartParkingSessionScreen extends StatefulWidget {
   const StartParkingSessionScreen({super.key});
@@ -27,6 +28,13 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
     'Tesla Model 3 - TES001',
   ];
 
+  // TODO: placeholder locations
+  final List<CarparkLocation> _carparks = [
+    CarparkLocation('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut at sem fermentum, mollis libero in, porta ligula. Phasellus non leo. ', LatLng(1.358304401350051, 103.8231520606375)),
+    CarparkLocation('Blk 456 Banana St', LatLng(1.3619697156101385, 103.80923761033203)),
+    CarparkLocation('Blk 789 Cherry Ave', LatLng(1.3711426261951147, 103.82042091952135)),
+  ];
+
   @override
   void dispose() {
     _sessionNameController.dispose();
@@ -43,12 +51,14 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
   Future<void> _editLocation(BuildContext context) async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => CarparkPickerScreen())
+      MaterialPageRoute(
+        builder: (context) => CarparkPickerScreen(carparks: _carparks),
+      ),
     ) as CarparkLocation?;
 
     if (result != null) {
       setState(() {
-        _selectedLocation = result.carparkName;
+        _selectedLocation = result.name;
       });
     }
   }
