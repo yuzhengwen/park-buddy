@@ -18,6 +18,12 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _userId;
 
   @override
+  void dispose() {
+    _authSubscription.cancel();
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
 
