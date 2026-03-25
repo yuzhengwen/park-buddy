@@ -42,10 +42,10 @@ class FamilyService {
   Future<String> createFamily(String familyName) async {
     final userId = supabase.auth.currentUser!.id;
 
-    final res = await supabase.rpc('create_family', params: {
-      'p_familyname': familyName,
-      'p_userid': userId,
-    });
+    final res = await supabase.rpc(
+      'create_family',
+      params: {'p_familyname': familyName, 'p_userid': userId},
+    );
 
     return res[0]['familyjoincode'];
   }
@@ -54,9 +54,23 @@ class FamilyService {
   Future<void> joinFamily(String code) async {
     final userId = supabase.auth.currentUser!.id;
 
-    await supabase.rpc('join_family', params: {
-      'p_code': code,
-      'p_userid': userId,
-    });
+    await supabase.rpc(
+      'join_family',
+      params: {'p_code': code, 'p_userid': userId},
+    );
+  }
+
+  Future<void> deleteFamily(String joinCode) async {
+    try {
+      await supabase.rpc(
+        'delete_family_cascade',
+        params: {'target_family_code': joinCode},
+      );
+    } on PostgrestException catch (error) {
+      // Pass the database error message up to the UI
+      throw error.message;
+    } catch (e) {
+      throw 'An unexpected error occurred: $e';
+    }
   }
 }

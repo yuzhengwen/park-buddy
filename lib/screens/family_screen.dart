@@ -86,11 +86,70 @@ class _FamilyScreenState extends State<FamilyScreen> {
     await loadFamily();
   }
 
+  bool _isDeleting = false;
+  Future<void> _handleDelete() async {
+    bool confirm = await _showDeleteDialog();
+    if (!confirm) return;
+
+    setState(() => _isDeleting = true);
+
+    try {
+      // Note: use the 'joinCode' variable that you loaded in loadFamily()
+      await _familyService.deleteFamily(joinCode);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Family deleted successfully')),
+        );
+
+        // ✅ Refresh the state to show the "No Family" view
+        await loadFamily();
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.toString()),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isDeleting = false);
+    }
+  }
+
+  Future<bool> _showDeleteDialog() async {
+    return await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Delete Family?'),
+            content: const Text(
+              'This will remove all members and cars. This action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       // show loading state while fetching family data
-      return const Scaffold(body: Center(child: CircularProgressIndicator())); 
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return Scaffold(
       appBar: AppBar(title: const Text('Family Management')),
@@ -154,6 +213,28 @@ class _FamilyScreenState extends State<FamilyScreen> {
                 title: Text(members[index]),
               );
             },
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: SizedBox(
+            width: double.infinity,
+            child: _isDeleting
+                ? const Center(child: CircularProgressIndicator())
+                : ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                    ),
+                    onPressed: _handleDelete,
+                    child: const Text(
+                      'Delete Family',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
           ),
         ),
       ],
