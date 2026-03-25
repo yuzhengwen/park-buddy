@@ -106,8 +106,13 @@ class CarparkPickerMap extends StatelessWidget {
       options: MapOptions(
         initialCenter: _initialMapCenter,
         initialZoom: _initialMapZoom,
-        onPositionChanged: (camera, hasGesture) {
-          _onChangedBounds(camera.visibleBounds);
+        onMapReady: () {
+          _onChangedBounds(_mapController.camera.visibleBounds);
+        },
+        onMapEvent: (evt) {
+          if (evt is MapEventMoveEnd) {
+            _onChangedBounds(evt.camera.visibleBounds);
+          }
         },
       ),
       children: <Widget>[
