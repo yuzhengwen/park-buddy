@@ -1,16 +1,131 @@
-
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MyParkingTab extends StatefulWidget {
   @override
-  _MyParkingTabState  createState() => _MyParkingTabState ();
+  _MyParkingTabState createState() => _MyParkingTabState();
 }
 
-class _MyParkingTabState extends State<MyParkingTab  > {
+class _MyParkingTabState extends State<MyParkingTab> {
+  final supabase = Supabase.instance.client;
+  List<Map<String, dynamic>> cars = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCars();
+  }
+
+  Future<void> fetchCars() async {
+    final userId = supabase.auth.currentUser?.id;
+    final response = await supabase
+        .from('cars')
+        .select()
+        .eq('ownerid', userId!);
+    setState(() {
+      cars = List<Map<String, dynamic>>.from(response);
+      isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(child: Text("My Parking Tab Screen")),
+      appBar: AppBar(
+        title: Text('My Parking',
+            style: TextStyle(color: Colors.white)),
+        backgroundColor: Color(0xFF6200EA),
+      ),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : cars.isEmpty
+              ? Center(child: Text('No cars registered yet'))
+              : ListView.builder(
+                  itemCount: cars.length,
+                  itemBuilder: (context, index) {
+                    return CarCard(car: cars[index]);
+                  },
+                ),
+    );
+  }
+}
+
+class CarCard extends StatefulWidget {
+  final Map<String, dynamic> car;
+  CarCard({required this.car});
+
+  @override
+  _CarCardState createState() => _CarCardState();
+}
+
+class _CarCardState extends State<CarCard> {
+  final supabase = Supabase.instance.client;
+  List<Map<String, dynamic>> sessions = [];
+  bool isExpanded = false;
+  bool isLoading = false;
+
+  Future<void> fetchSessions() async {
+    setState(() => isLoading = true);
+    final response = await supabase
+        .from('parkingsession')
+        .select()
+        .eq('carplate', widget.car['carplate'])
+        .order('parkingstarttime', ascending: false)
+        .limit(3);
+    setState(() {
+      sessions = List<Map<String, dynamic>>.from(response);
+      isLoading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        children: [
+          ListTile(
+            leading: Icon(Icons.directions_car, color: Color(0xFF6200EA), size: 40),
+            title: Text(widget.car['carname'] ?? 'Unknown Car',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(widget.car['carplate'] ?? ''),
+            trailing: IconButton(
+              icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
+              onPressed: () {
+                setState(() => isExpanded = !isExpanded);
+                if (isExpanded && sessions.isEmpty) fetchSessions();
+              },
+            ),
+          ),
+          if (isExpanded) ...[
+            Divider(),
+            isLoading
+                ? Padding(
+                    padding: EdgeInsets.all(16),
+                    child: CircularProgressIndicator(),
+                  )
+                : sessions.isEmpty
+                    ? Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text('No parking sessions yet'),
+                      )
+                    : Column(
+                        children: sessions.map((session) {
+                          return ListTile(
+                            leading: Icon(Icons.history, color: Colors.grey),
+                            title: Text(session['sessionname'] ?? 'Unnamed Session'),
+                            subtitle: Text(session['location'] ?? ''),
+                            trailing: Icon(Icons.chevron_right),
+                            onTap: () {
+                              // Will navigate to session details later
+                            },
+                          );
+                        }).toList(),
+                      ),
+          ]
+        ],
+      ),
     );
   }
 }
