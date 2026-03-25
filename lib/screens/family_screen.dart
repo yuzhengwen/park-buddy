@@ -10,12 +10,10 @@ class FamilyScreen extends StatefulWidget {
 
 class _FamilyScreenState extends State<FamilyScreen> {
   final FamilyService _familyService = FamilyService();
-  bool _isLoading = true;
-
-  late bool isInFamily;
-  late String familyName;
-  late String joinCode;
-  late List<String> members;
+  bool _isLoading = true, isInFamily = false;
+  String familyName = "", joinCode = "", ownerId = "";
+  List<Map<String, dynamic>> members = [];
+  bool get isOwner => _familyService.supabase.auth.currentUser!.id == ownerId;
 
   @override
   void initState() {
@@ -28,6 +26,8 @@ class _FamilyScreenState extends State<FamilyScreen> {
       _isLoading = true;
     });
     final data = await _familyService.getUserFamily();
+    if (!mounted)
+      return; // Check if widget is still in the tree before calling setState
 
     setState(() {
       _isLoading = false;
@@ -37,14 +37,33 @@ class _FamilyScreenState extends State<FamilyScreen> {
         isInFamily = true;
         familyName = data['familyName'];
         joinCode = data['joinCode'];
-        members = data['members'];
+        members = List<Map<String, dynamic>>.from(data['members']);
+        ownerId = data['ownerId'];
       }
     });
   }
 
+  Future<void> _handleLeave() async {
+    setState(() => _isDeleting = true);
+    try {
+      await _familyService.leaveFamily(joinCode);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Left family')));
+        await loadFamily();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isDeleting = false);
+    }
+  }
+
   void _showJoinDialog() {
     String enteredCode = "";
-
     showDialog(
       context: context,
       builder: (context) {
@@ -63,8 +82,8 @@ class _FamilyScreenState extends State<FamilyScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                _joinFamily(enteredCode);
                 Navigator.pop(context);
+                _joinFamily(enteredCode);
               },
               child: const Text("Join"),
             ),
@@ -76,7 +95,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
 
   void _createFamily() async {
     setState(() => _isLoading = true);
-    final code = await _familyService.createFamily("My Family");
+    await _familyService.createFamily("My Family");
     await loadFamily(); // this will set isLoading to false after refreshing state
   }
 
@@ -94,15 +113,12 @@ class _FamilyScreenState extends State<FamilyScreen> {
     setState(() => _isDeleting = true);
 
     try {
-      // Note: use the 'joinCode' variable that you loaded in loadFamily()
       await _familyService.deleteFamily(joinCode);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Family deleted successfully')),
         );
-
-        // ✅ Refresh the state to show the "No Family" view
         await loadFamily();
       }
     } catch (error) {
@@ -157,7 +173,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
     );
   }
 
-  // ✅ When user IS in a family
+  // When user IS in a family
   Widget _buildFamilyView() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,9 +224,35 @@ class _FamilyScreenState extends State<FamilyScreen> {
           child: ListView.builder(
             itemCount: members.length,
             itemBuilder: (context, index) {
+              final member = members[index];
+              final isOwner = member['userid'] == ownerId;
+              debugPrint("Member: ${member['username']}, ownerId: $ownerId, userId: ${member['userid']}, isOwner: $isOwner");
               return ListTile(
                 leading: const Icon(Icons.person),
-                title: Text(members[index]),
+                title: Row(
+                  children: [
+                    Text(member['username']),
+                    if (isOwner)
+                      Container(
+                        margin: const EdgeInsets.only(left: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.amber,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'OWNER',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               );
             },
           ),
@@ -226,9 +268,9 @@ class _FamilyScreenState extends State<FamilyScreen> {
                       backgroundColor: Colors.red,
                       padding: const EdgeInsets.symmetric(vertical: 15),
                     ),
-                    onPressed: _handleDelete,
-                    child: const Text(
-                      'Delete Family',
+                    onPressed: isOwner ? _handleDelete : _handleLeave,
+                    child: Text(
+                      isOwner ? 'Delete Family' : 'Leave Family',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -241,7 +283,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
     );
   }
 
-  // ❌ When user is NOT in a family
+  // When user is NOT in a family
   Widget _buildNoFamilyView() {
     return Center(
       child: Column(

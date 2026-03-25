@@ -24,17 +24,21 @@ class FamilyService {
 
     final membersRes = await supabase
         .from('familyuser')
-        .select('users(username)')
+        .select('users(userid, username)')
         .eq('familyjoincode', code);
 
-    final members = membersRes
-        .map<String>((m) => m['users']['username'] as String)
-        .toList();
+    final members = membersRes.map<Map<String, dynamic>>((m) {
+      return {
+        'userid': m['users']['userid'],
+        'username': m['users']['username'],
+      };
+    }).toList();
 
     return {
       'familyName': family['familyname'],
       'joinCode': code,
       'members': members,
+      'ownerId': family['ownerid'],
     };
   }
 
@@ -58,6 +62,16 @@ class FamilyService {
       'join_family',
       params: {'p_code': code, 'p_userid': userId},
     );
+  }
+
+  Future<void> leaveFamily(String joinCode) async {
+    final userId = supabase.auth.currentUser!.id;
+
+    await supabase
+        .from('familyuser')
+        .delete()
+        .eq('familyjoincode', joinCode)
+        .eq('userid', userId);
   }
 
   Future<void> deleteFamily(String joinCode) async {
