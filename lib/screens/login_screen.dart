@@ -45,9 +45,9 @@ class _LoginScreenState extends State<LoginScreen> {
         );
 
         // Optional toast
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Logged in: $_userId')));
+        // ScaffoldMessenger.of(
+        //   context,
+        // ).showSnackBar(SnackBar(content: Text('Logged in: $_userId')));
       } else {
         setState(() {
           _userId = null;
