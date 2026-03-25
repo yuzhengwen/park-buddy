@@ -66,7 +66,7 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
           ),
         ],
       ),
-      bottomSheet: CarparkPickerBottomSheet(),
+      bottomSheet: CarparkPickerBottomSheet(carparks: _boundedCarparks),
       persistentFooterButtons: <Widget>[
         CarparkPickerConfirmButton(
           onPressed: _selectedLocation != null
@@ -187,9 +187,12 @@ class BoundedMarkerLayer extends StatelessWidget {
 
 // Bottom sheet holding the list of carpark locations
 class CarparkPickerBottomSheet extends StatelessWidget {
+  final List<CarparkLocation> _carparks;
+
   const CarparkPickerBottomSheet({
     super.key,
-  });
+    required List<CarparkLocation> carparks,
+  }) : _carparks = carparks;
 
   @override
   Widget build(BuildContext context) {
@@ -203,9 +206,24 @@ class CarparkPickerBottomSheet extends StatelessWidget {
             delegate: DragHandleDelegate(),
             pinned: true,
           ),
-          SliverList.builder(
-            itemBuilder: (context, index) => ListTile(title: Text('Item $index')),
-          ),
+          if (_carparks.isNotEmpty)
+            SliverList.builder(
+              itemCount: _carparks.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(_carparks[index].name)
+                );
+              },
+            )
+          else
+            SliverFillRemaining(
+              child: Center(
+                child: Text(
+                  'No carparks found',
+                  style: TextStyle(color: Theme.of(context).colorScheme.outline),
+                ),
+              ),
+            ),
         ],
       ),
       snap: true,
