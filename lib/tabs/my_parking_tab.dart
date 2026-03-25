@@ -17,12 +17,11 @@ class _MyParkingTabState extends State<MyParkingTab> {
     fetchCars();
   }
 
-  Future<void> fetchCars() async {
-    final userId = supabase.auth.currentUser?.id;
+ Future<void> fetchCars() async {
     final response = await supabase
         .from('cars')
-        .select()
-        .eq('ownerid', userId!);
+        .select();
+    print('Cars fetched: $response');
     setState(() {
       cars = List<Map<String, dynamic>>.from(response);
       isLoading = false;
