@@ -35,6 +35,12 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
 
   CarparkLocation? _selectedLocation;
 
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
   void _onConfirm(BuildContext context) => Navigator.pop(context, _selectedLocation);
 
   void _onMapChangedBounds(LatLngBounds bounds) {
