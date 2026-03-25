@@ -80,7 +80,8 @@ class _CarCardState extends State<CarCard> {
   IconData _getCarIcon(String? caricon) {
     switch (caricon) {
       case 'sedan': return Icons.directions_car;
-      case 'sports': return Icons.sports_score;
+
+      case 'sports': return Icons.directions_car_filled;
       case 'suv': return Icons.directions_car_filled;
       case 'van': return Icons.airport_shuttle;
       default: return Icons.directions_car;
@@ -95,13 +96,20 @@ class _CarCardState extends State<CarCard> {
         children: [
           Container(
             height: 150,
-            width: double.infinity,
-            color: Colors.grey[200],
-            child: Icon(
-              _getCarIcon(widget.car['caricon']),
-              size: 100,
-              color: Color(0xFF6200EA),
-            ),
+          width: double.infinity,
+  color: Colors.grey[200],
+  child: widget.car['caricon'] != null && widget.car['caricon'].startsWith('http')
+      ? Image.network(
+          widget.car['caricon'],
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) =>
+              Icon(Icons.directions_car, size: 100, color: Color(0xFF6200EA)),
+        )
+      : Icon(
+          _getCarIcon(widget.car['caricon']),
+          size: 100,
+          color: Color(0xFF6200EA),
+        ),
           ),
           ListTile(
             title: Text(widget.car['carname'] ?? 'Unknown Car',
