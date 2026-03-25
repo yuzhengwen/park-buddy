@@ -2,6 +2,7 @@ import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:park_buddy/utils/location.dart';
 
 class CarparkLocation {
   final String name;
@@ -31,13 +32,36 @@ class CarparkPickerScreen extends StatefulWidget {
 
 class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
   final MapController _mapController = MapController();
-  List<CarparkLocation> _boundedCarparks = const <CarparkLocation>[];
+  final LocationService _locationService = LocationService();
 
+  LatLng? _userLocation;
+  List<CarparkLocation> _boundedCarparks = const <CarparkLocation>[];
   CarparkLocation? _selectedLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    _locationService.beginLocationTracking(
+      onLocationUpdate: (position) {
+        setState(() {
+          _userLocation = LatLng(position.latitude, position.longitude);
+        });
+      },
+      onError: (e) {
+        if (!mounted) return;
+        ScaffoldMessenger
+            .of(context)
+            .showSnackBar(
+              SnackBar(content: Text('Location error: $e'))
+            );
+      },
+    );
+  }
 
   @override
   void dispose() {
     _mapController.dispose();
+    _locationService.dispose();
     super.dispose();
   }
 
@@ -60,6 +84,7 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
           CarparkPickerMap(
             mapController: _mapController,
             carparks: _boundedCarparks,
+            userLocation: _userLocation,
             onChangedBounds: _onMapChangedBounds,
             initialMapCenter: widget.initialMapCenter,
             initialMapZoom: widget.initialMapZoom,
@@ -84,6 +109,7 @@ class CarparkPickerMap extends StatelessWidget {
   final LatLng _initialMapCenter;
   final double _initialMapZoom;
   final List<CarparkLocation> _carparks;
+  final LatLng? _userLocation;
   final void Function(LatLngBounds) _onChangedBounds;
 
   const CarparkPickerMap({
@@ -92,11 +118,13 @@ class CarparkPickerMap extends StatelessWidget {
     LatLng? initialMapCenter,
     double? initialMapZoom,
     required List<CarparkLocation> carparks,
+    LatLng? userLocation,
     required void Function(LatLngBounds) onChangedBounds,
   }) : _mapController = mapController,
        _initialMapCenter = initialMapCenter ?? const LatLng(1.3521, 103.8198),
        _initialMapZoom = initialMapZoom ?? 14,
        _carparks = carparks,
+       _userLocation = userLocation,
        _onChangedBounds = onChangedBounds;
 
   @override
@@ -120,7 +148,10 @@ class CarparkPickerMap extends StatelessWidget {
           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
           userAgentPackageName: 'com.example.sc2006_parking',
         ),
-        BoundedMarkerLayer(carparks: _carparks),
+        BoundedMarkerLayer(
+          carparks: _carparks,
+          userLocation: _userLocation,
+        ),
       ],
     );
   }
@@ -129,6 +160,7 @@ class CarparkPickerMap extends StatelessWidget {
 // Map layer for markers (pins) within the visible map viewport
 class BoundedMarkerLayer extends StatelessWidget {
   final List<CarparkLocation> _carparks;
+  final LatLng? _userLocation;
 
   // Helper function to create Marker objects from carpark details
   Marker _createMarker(LatLng coords, String name) => Marker(
@@ -171,16 +203,33 @@ class BoundedMarkerLayer extends StatelessWidget {
   const BoundedMarkerLayer({
     super.key,
     required List<CarparkLocation> carparks,
-  }) : _carparks = carparks;
+    required LatLng? userLocation,
+  }) : _carparks = carparks,
+       _userLocation = userLocation;
 
   @override
   Widget build(BuildContext context) {
     return MarkerLayer(
       rotate: true,
-      alignment: Alignment.bottomLeft,
-      markers: _carparks
-        .map((carpark) => _createMarker(carpark.coords, carpark.name))
-        .toList(),
+      alignment: Alignment.bottomCenter,
+      markers: <Marker>[
+        // Nearby carpark markers
+        ..._carparks.map((carpark) => _createMarker(carpark.coords, carpark.name)),
+
+        // User location marker
+        if (_userLocation != null)
+          Marker(
+            point: _userLocation!,
+            alignment: Alignment.topCenter,
+            height: 40,
+            width: 40,
+            child: Icon(
+              Icons.location_history,
+              color: Colors.blue,
+              size: 40,
+            ),
+          ),
+      ],
     );
   }
 }
