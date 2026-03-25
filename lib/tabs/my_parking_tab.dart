@@ -18,11 +18,10 @@ class _MyParkingTabState extends State<MyParkingTab> {
     fetchCars();
   }
 
- Future<void> fetchCars() async {
+  Future<void> fetchCars() async {
     final response = await supabase
         .from('cars')
         .select();
-    print('Cars fetched: $response');
     setState(() {
       cars = List<Map<String, dynamic>>.from(response);
       isLoading = false;
@@ -33,8 +32,7 @@ class _MyParkingTabState extends State<MyParkingTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('My Parking',
-            style: TextStyle(color: Colors.white)),
+        title: Text('My Parking', style: TextStyle(color: Colors.white)),
         backgroundColor: Color(0xFF6200EA),
       ),
       body: isLoading
@@ -79,17 +77,52 @@ class _CarCardState extends State<CarCard> {
     });
   }
 
+  IconData _getCarIcon(String? caricon) {
+    switch (caricon) {
+      case 'sedan': return Icons.directions_car;
+      case 'sports': return Icons.sports_score;
+      case 'suv': return Icons.directions_car_filled;
+      case 'van': return Icons.airport_shuttle;
+      default: return Icons.directions_car;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         children: [
+          Container(
+            height: 150,
+            width: double.infinity,
+            color: Colors.grey[200],
+            child: Icon(
+              _getCarIcon(widget.car['caricon']),
+              size: 100,
+              color: Color(0xFF6200EA),
+            ),
+          ),
           ListTile(
-            leading: Icon(Icons.directions_car, color: Color(0xFF6200EA), size: 40),
             title: Text(widget.car['carname'] ?? 'Unknown Car',
                 style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(widget.car['carplate'] ?? ''),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(widget.car['carplate'] ?? ''),
+                SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.circle, size: 10, color: Colors.orange),
+                    SizedBox(width: 4),
+                    Text('Parked',
+                        style: TextStyle(
+                            color: Colors.orange,
+                            fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ],
+            ),
             trailing: IconButton(
               icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
               onPressed: () {
@@ -118,13 +151,14 @@ class _CarCardState extends State<CarCard> {
                             subtitle: Text(session['location'] ?? ''),
                             trailing: Icon(Icons.chevron_right),
                             onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => ParkingSessionDetailScreen(session: session),
-    ),
-  );
-},
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      ParkingSessionDetailScreen(session: session),
+                                ),
+                              );
+                            },
                           );
                         }).toList(),
                       ),
