@@ -31,9 +31,19 @@ class CarparkPickerScreen extends StatefulWidget {
 
 class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
   final MapController _mapController = MapController();
+  List<CarparkLocation> _boundedCarparks = const <CarparkLocation>[];
+
   CarparkLocation? _selectedLocation;
 
   void _onConfirm(BuildContext context) => Navigator.pop(context, _selectedLocation);
+
+  void _onMapChangedBounds(LatLngBounds bounds) {
+    setState(() {
+      _boundedCarparks = widget.carparks
+          .where((carpark) => bounds.contains(carpark.coords))
+          .toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +53,8 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
         children: <Widget>[
           CarparkPickerMap(
             mapController: _mapController,
-            carparks: widget.carparks,
+            carparks: _boundedCarparks,
+            onChangedBounds: _onMapChangedBounds,
             initialMapCenter: widget.initialMapCenter,
             initialMapZoom: widget.initialMapZoom,
           ),
@@ -67,6 +78,7 @@ class CarparkPickerMap extends StatelessWidget {
   final LatLng _initialMapCenter;
   final double _initialMapZoom;
   final List<CarparkLocation> _carparks;
+  final void Function(LatLngBounds) _onChangedBounds;
 
   const CarparkPickerMap({
     super.key,
@@ -74,10 +86,12 @@ class CarparkPickerMap extends StatelessWidget {
     LatLng? initialMapCenter,
     double? initialMapZoom,
     required List<CarparkLocation> carparks,
+    required void Function(LatLngBounds) onChangedBounds,
   }) : _mapController = mapController,
        _initialMapCenter = initialMapCenter ?? const LatLng(1.3521, 103.8198),
        _initialMapZoom = initialMapZoom ?? 14,
-       _carparks = carparks;
+       _carparks = carparks,
+       _onChangedBounds = onChangedBounds;
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +100,9 @@ class CarparkPickerMap extends StatelessWidget {
       options: MapOptions(
         initialCenter: _initialMapCenter,
         initialZoom: _initialMapZoom,
+        onPositionChanged: (camera, hasGesture) {
+          _onChangedBounds(camera.visibleBounds);
+        },
       ),
       children: <Widget>[
         TileLayer(
@@ -99,7 +116,6 @@ class CarparkPickerMap extends StatelessWidget {
 }
 
 // Map layer for markers (pins) within the visible map viewport
-// Only valid within map context!
 class BoundedMarkerLayer extends StatelessWidget {
   final List<CarparkLocation> _carparks;
 
@@ -148,13 +164,10 @@ class BoundedMarkerLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bounds = MapCamera.of(context).visibleBounds;
-
     return MarkerLayer(
       rotate: true,
       alignment: Alignment.bottomLeft,
       markers: _carparks
-        .where((carpark) => bounds.contains(carpark.coords))
         .map((carpark) => _createMarker(carpark.coords, carpark.name))
         .toList(),
     );
