@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../screens/parking_session_detail_screen.dart';
 
 class MyParkingTab extends StatefulWidget {
   @override
@@ -117,8 +118,13 @@ class _CarCardState extends State<CarCard> {
                             subtitle: Text(session['location'] ?? ''),
                             trailing: Icon(Icons.chevron_right),
                             onTap: () {
-                              // Will navigate to session details later
-                            },
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => ParkingSessionDetailScreen(session: session),
+    ),
+  );
+},
                           );
                         }).toList(),
                       ),
