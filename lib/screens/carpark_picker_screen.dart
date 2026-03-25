@@ -41,10 +41,14 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
   @override
   void initState() {
     super.initState();
-    _locationService.beginLocationTracking(
+
+    // Initialise live location
+    _locationService.begin(
       onLocationUpdate: (position) {
         setState(() {
-          _userLocation = LatLng(position.latitude, position.longitude);
+          _userLocation = position != null
+              ? LatLng(position.latitude, position.longitude)
+              : null;
         });
       },
       onError: (e) {
