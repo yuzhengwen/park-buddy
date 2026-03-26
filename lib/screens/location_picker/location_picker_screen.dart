@@ -26,6 +26,8 @@ class CarparkPickerScreen extends StatefulWidget {
 class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
   final MapController _mapController = MapController();
   final LocationService _locationService = LocationService();
+  final ValueNotifier<double> _sheetSize = ValueNotifier(0.25);
+  final DraggableScrollableController _sheetController = DraggableScrollableController();
 
   LatLng? _userLocation;
   List<CarparkLocation> _boundedCarparks = const <CarparkLocation>[];
@@ -58,6 +60,7 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
   void dispose() {
     _mapController.dispose();
     _locationService.dispose();
+    _sheetSize.dispose();
     super.dispose();
   }
 
@@ -87,12 +90,15 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
             onMarkerSelect: (carpark) => _onConfirm(context, carpark),
             initialMapCenter: widget.initialMapCenter,
             initialMapZoom: widget.initialMapZoom,
+            sheetSize: _sheetSize,
+          ),
+          CarparkPickerBottomSheet(
+            carparks: _boundedCarparks,
+            onItemSelect: (carpark) => _onConfirm(context, carpark),
+            sheetSize: _sheetSize,
+            controller: _sheetController,
           ),
         ],
-      ),
-      bottomSheet: CarparkPickerBottomSheet(
-        carparks: _boundedCarparks,
-        onItemSelect: (carpark) => _onConfirm(context, carpark),
       ),
     );
   }
