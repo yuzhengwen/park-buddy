@@ -256,31 +256,6 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
   }
 }
 
-// Form item to edit location
-class LocationField extends StatelessWidget {
-  final void Function() onEditLocation;
-  final String _parkLocation;
-
-  const LocationField({
-    super.key,
-    required this.onEditLocation,
-    required String parkLocation,
-  }) : _parkLocation = parkLocation;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onEditLocation,
-      child: Row(
-        children: [
-          Expanded(child: Text(_parkLocation)),
-          const Icon(Icons.edit),
-        ],
-      ),
-    );
-  }
-}
-
 // Icon container for form fields
 class ListIcon extends StatelessWidget {
   final IconData icon;
