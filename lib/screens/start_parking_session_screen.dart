@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'carpark_picker_screen.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:park_buddy/screens/location_picker/location_picker_screen.dart';
+import 'package:park_buddy/screens/location_picker/location.dart';
 
 class StartParkingSessionScreen extends StatefulWidget {
   const StartParkingSessionScreen({super.key});
