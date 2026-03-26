@@ -69,7 +69,9 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
     super.dispose();
   }
 
-  void _onConfirm(BuildContext context) => Navigator.pop(context, _selectedLocation);
+  void _onConfirm(BuildContext context, CarparkLocation carpark) {
+    Navigator.pop(context, carpark);
+  }
 
   void _onMapChangedBounds(LatLngBounds bounds) {
     setState(() {
@@ -90,19 +92,23 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
             carparks: _boundedCarparks,
             userLocation: _userLocation,
             onChangedBounds: _onMapChangedBounds,
+            onMarkerSelect: (carpark) => _onConfirm(context, carpark),
             initialMapCenter: widget.initialMapCenter,
             initialMapZoom: widget.initialMapZoom,
           ),
         ],
       ),
-      bottomSheet: CarparkPickerBottomSheet(carparks: _boundedCarparks),
-      persistentFooterButtons: <Widget>[
-        CarparkPickerConfirmButton(
-          onPressed: _selectedLocation != null
-              ? () => _onConfirm(context)
-              : null,
-        ),
-      ],
+      bottomSheet: CarparkPickerBottomSheet(
+        carparks: _boundedCarparks,
+        onItemSelect: (carpark) => _onConfirm(context, carpark),
+      ),
+      // persistentFooterButtons: <Widget>[
+      //   CarparkPickerConfirmButton(
+      //     onPressed: _selectedLocation != null
+      //         ? () => _onConfirm(context)
+      //         : null,
+      //   ),
+      // ],
     );
   }
 }
@@ -114,7 +120,8 @@ class CarparkPickerMap extends StatelessWidget {
   final double _initialMapZoom;
   final List<CarparkLocation> _carparks;
   final LatLng? _userLocation;
-  final void Function(LatLngBounds) _onChangedBounds;
+  final void Function(LatLngBounds)? _onChangedBounds;
+  final void Function(CarparkLocation carpark)? _onMarkerSelect;
 
   const CarparkPickerMap({
     super.key,
@@ -123,13 +130,15 @@ class CarparkPickerMap extends StatelessWidget {
     double? initialMapZoom,
     required List<CarparkLocation> carparks,
     LatLng? userLocation,
-    required void Function(LatLngBounds) onChangedBounds,
+    void Function(LatLngBounds)? onChangedBounds,
+    void Function(CarparkLocation carpark)? onMarkerSelect,
   }) : _mapController = mapController,
        _initialMapCenter = initialMapCenter ?? const LatLng(1.3521, 103.8198),
-       _initialMapZoom = initialMapZoom ?? 14,
+       _initialMapZoom = initialMapZoom ?? 16,
        _carparks = carparks,
        _userLocation = userLocation,
-       _onChangedBounds = onChangedBounds;
+       _onChangedBounds = onChangedBounds,
+       _onMarkerSelect = onMarkerSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -139,11 +148,11 @@ class CarparkPickerMap extends StatelessWidget {
         initialCenter: _initialMapCenter,
         initialZoom: _initialMapZoom,
         onMapReady: () {
-          _onChangedBounds(_mapController.camera.visibleBounds);
+          _onChangedBounds?.call(_mapController.camera.visibleBounds);
         },
         onMapEvent: (evt) {
           if (evt is MapEventMoveEnd) {
-            _onChangedBounds(evt.camera.visibleBounds);
+            _onChangedBounds?.call(evt.camera.visibleBounds);
           }
         },
       ),
@@ -155,6 +164,7 @@ class CarparkPickerMap extends StatelessWidget {
         BoundedMarkerLayer(
           carparks: _carparks,
           userLocation: _userLocation,
+          onMarkerSelect: _onMarkerSelect,
         ),
       ],
     );
@@ -165,51 +175,57 @@ class CarparkPickerMap extends StatelessWidget {
 class BoundedMarkerLayer extends StatelessWidget {
   final List<CarparkLocation> _carparks;
   final LatLng? _userLocation;
-
-  // Helper function to create Marker objects from carpark details
-  Marker _createMarker(LatLng coords, String name) => Marker(
-    point: coords,
-    height: 70,
-    width: 160,
-    alignment: Alignment.topCenter,
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: <Widget>[
-        // Stack to create outline effect for text
-        Stack(
-          children: <Widget>[
-            Text(
-              name,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
-              style: TextStyle(
-                foreground: Paint()
-                  ..style = PaintingStyle.stroke
-                  ..strokeWidth = 3
-                  ..color = Colors.white,
-              ),
-            ),
-            Text(
-              name,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
-            ),
-          ],
-        ),
-        Icon(Icons.location_pin, color: Colors.red),
-      ],
-    ),
-  );
+  final void Function(CarparkLocation carpark)? _onMarkerSelect;
 
   const BoundedMarkerLayer({
     super.key,
     required List<CarparkLocation> carparks,
     required LatLng? userLocation,
+    void Function(CarparkLocation carpark)? onMarkerSelect,
   }) : _carparks = carparks,
-       _userLocation = userLocation;
+       _userLocation = userLocation,
+       _onMarkerSelect = onMarkerSelect;
+
+  // Helper function to create Marker objects from carpark details
+  Marker _createMarker(CarparkLocation carpark) => Marker(
+    point: carpark.coords,
+    height: 70,
+    width: 160,
+    alignment: Alignment.topCenter,
+    child: GestureDetector(
+      onTap: () => _onMarkerSelect?.call(carpark),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          // Stack to create outline effect for text
+          Stack(
+            children: <Widget>[
+              Text(
+                carpark.name,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+                style: TextStyle(
+                  foreground: Paint()
+                    ..style = PaintingStyle.stroke
+                    ..strokeWidth = 3
+                    ..color = Colors.white,
+                ),
+              ),
+              Text(
+                carpark.name,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+              ),
+            ],
+          ),
+          Icon(Icons.location_pin, color: Colors.red),
+        ],
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +234,7 @@ class BoundedMarkerLayer extends StatelessWidget {
       alignment: Alignment.bottomCenter,
       markers: <Marker>[
         // Nearby carpark markers
-        ..._carparks.map((carpark) => _createMarker(carpark.coords, carpark.name)),
+        ..._carparks.map((carpark) => _createMarker(carpark)),
 
         // User location marker
         if (_userLocation != null)
@@ -241,11 +257,14 @@ class BoundedMarkerLayer extends StatelessWidget {
 // Bottom sheet holding the list of carpark locations
 class CarparkPickerBottomSheet extends StatelessWidget {
   final List<CarparkLocation> _carparks;
+  final void Function(CarparkLocation carpark)? _onItemSelect;
 
   const CarparkPickerBottomSheet({
     super.key,
     required List<CarparkLocation> carparks,
-  }) : _carparks = carparks;
+    void Function(CarparkLocation carpark)? onItemSelect,
+  }) : _carparks = carparks,
+       _onItemSelect = onItemSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -264,7 +283,8 @@ class CarparkPickerBottomSheet extends StatelessWidget {
               itemCount: _carparks.length,
               itemBuilder: (context, index) {
                 return ListTile(
-                  title: Text(_carparks[index].name)
+                  title: Text(_carparks[index].name),
+                  onTap: () => _onItemSelect?.call(_carparks[index]),
                 );
               },
             )

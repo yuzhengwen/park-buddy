@@ -17,7 +17,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
   final TextEditingController _rateThresholdController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
 
-  String? _selectedLocation;
+  CarparkLocation? _selectedLocation;
   String? _selectedCar;
   File? _parkingPicture;
 
@@ -96,16 +96,21 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
   }
 
   Future<void> _editLocation(BuildContext context) async {
-    final result = await Navigator.push(
+    final CarparkLocation? result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CarparkPickerScreen(carparks: _carparks),
+        builder: (context) {
+          return CarparkPickerScreen(
+            carparks: _carparks,
+            initialMapCenter: _selectedLocation?.coords,
+          );
+        },
       ),
-    ) as CarparkLocation?;
+    );
 
     if (result != null) {
       setState(() {
-        _selectedLocation = result.name;
+        _selectedLocation = result;
       });
     }
   }
@@ -154,7 +159,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
                 ListTile(
                   leading: const ListIcon(Icons.location_on),
                   title: const Text('Location'),
-                  subtitle: Text(_selectedLocation ?? 'Not selected'),
+                  subtitle: Text(_selectedLocation?.name ?? 'Not selected'),
                   isThreeLine: true,
                   trailing: const ListIcon(Icons.edit),
                   onTap: () => _editLocation(context),
