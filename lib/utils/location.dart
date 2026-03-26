@@ -13,7 +13,12 @@ class _TrackingCallbacks {
   });
 }
 
-/// 
+/// Simplified location service management.
+///
+/// Call begin() to track the user's live location with a callback. Permission
+/// requests, location updates and location state changes are handled
+/// automatically. Remember to call dispose() when done to release the
+/// trackers.
 class LocationService {
   StreamSubscription<Position>? _positionSubscription;
   StreamSubscription<ServiceStatus>? _statusSubscription;
