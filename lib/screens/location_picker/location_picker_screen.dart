@@ -1,7 +1,9 @@
 import 'dart:core';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:park_buddy/utils/location.dart';
 import 'package:park_buddy/screens/location_picker/map.dart';
 import 'package:park_buddy/screens/location_picker/location.dart';
@@ -32,6 +34,28 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
   LatLng? _userLocation;
   List<CarparkLocation> _boundedCarparks = const <CarparkLocation>[];
 
+  Future<void> _goToUser() async {
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: LocationSettings(
+          timeLimit: Duration(milliseconds: 500),
+        ),
+      );
+      final success = _mapController.move(
+        LatLng(pos.latitude, pos.longitude),
+        widget.initialMapZoom ?? 16,
+      );
+      if (success) {
+        _onMapChangedBounds(_mapController.camera.visibleBounds);
+      }
+
+    } on TimeoutException {
+      return;
+    } on LocationServiceDisabledException {
+      return;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +78,8 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
             );
       },
     );
+
+    _goToUser();
   }
 
   @override
