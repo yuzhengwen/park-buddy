@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:park_buddy/tabs/profile_tab.dart';
-import '../utils/family_service.dart';
 import '../utils/parking_service.dart';
 import '../UI/CarCard.dart';
-import 'add_car_screen.dart';
+import 'modify_car_screen.dart';
+import '../services/car_service.dart';
 
 
 class CarScreen extends StatefulWidget {
@@ -15,6 +14,7 @@ class CarScreen extends StatefulWidget {
 
 class _CarScreenState extends State<CarScreen> {
   final _parkingService = ParkingService();
+  final _carService = CarService();
   List<Map<String, dynamic>> cars = [];
   bool isLoading = true;
 
@@ -36,12 +36,15 @@ class _CarScreenState extends State<CarScreen> {
       MaterialPageRoute(builder: (context) => const AddCarScreen()),
     );
 
-    // 2. Check if the user actually added a car (didn't just press back)
     if (newCarData != null) {
-      // 3. OPTIONAL: Save to your backend/database first
-      // await _parkingService.saveNewCar(newCarData);
-
-      // 4. Update the UI immediately
+    try {
+      await _carService.addCar(newCarData);
+      _loadCars(); // Refresh list from Supabase
+      } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: ${e.toString()}")),
+      );
+    }
       setState(() {
         cars.add(newCarData); 
       });
@@ -73,7 +76,24 @@ class _CarScreenState extends State<CarScreen> {
                     parkingService: _parkingService,
                     showIcons: false,
                     canExpand: false,
-                    onEdit: () { print("Editing ${cars[index]['carname']}");},
+                    onEdit: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AddCarScreen(carToEdit: cars[index]),
+                        ),
+                      );
+
+                      if (result == 'delete') {
+                        // User pressed delete
+                        await _carService.deleteCar(cars[index]['carplate']);
+                        _loadCars(); // Refresh list
+                      } else if (result is Map<String, dynamic>) {
+                        // User updated details
+                        await _carService.updateCar(cars[index]['carplate'], result);
+                        _loadCars(); // Refresh list
+                      }
+                    },
                   );
                 },
               ),
