@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/auth.dart'; // <- import your reusable logout function
+import '../screens/family_screen.dart'; // <- import the family screen
 
 class ProfileTab extends StatefulWidget {
+  const ProfileTab({super.key});
+
   @override
   _ProfileTabState createState() => _ProfileTabState();
 }
@@ -23,7 +26,7 @@ class _ProfileTabState extends State<ProfileTab> {
             const CircleAvatar(
               radius: 60,
               //backgroundImage: NetworkImage('https://via.placeholder.com/150'),
-              child: const Icon(Icons.person, size: 50, color: Colors.white),
+              child: Icon(Icons.person, size: 50, color: Colors.white),
             ),
             const SizedBox(height: 15),
 
@@ -80,7 +83,12 @@ class _ProfileTabState extends State<ProfileTab> {
                     icon: Icons.family_restroom,
                     label: 'Family',
                     color: Colors.greenAccent.shade700,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => FamilyScreen()),
+                      );
+                    },
                   ),
                 ),
               ],

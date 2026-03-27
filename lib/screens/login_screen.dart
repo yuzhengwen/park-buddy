@@ -3,15 +3,59 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart'; // <-- for kIsWeb
 import 'main_screen.dart'; // <-- import the main screen
 import '../utils/auth.dart';
+import 'dart:async'; // <-- for StreamSubscription
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  late final StreamSubscription<AuthState> _authSubscription;
   final supabase = Supabase.instance.client;
   String? _userId;
+
+  @override
+  void dispose() {
+    _authSubscription.cancel();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Listen for auth changes
+    _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
+      // if user is already on next screen, do nothing
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+
+      final session = data.session;
+      if (session != null) {
+        setState(() {
+          _userId = session.user.id;
+        });
+
+        // Navigate to MainScreen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => MainScreen()),
+        );
+
+        // Optional toast
+        // ScaffoldMessenger.of(
+        //   context,
+        // ).showSnackBar(SnackBar(content: Text('Logged in: $_userId')));
+      } else {
+        setState(() {
+          _userId = null;
+        });
+      }
+    });
+  }
+
   Future<void> signInWithGithub() async {
     await supabase.auth.signInWithOAuth(
       OAuthProvider.github,
@@ -29,54 +73,22 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final session = await supabase.auth.signInAnonymously();
 
-      if (session != null) {
-        setState(() {
-          _userId = session.user?.id;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Logged in anonymously: ${_userId}')),
-        );
-        // Navigate directly
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => MainScreen()),
-        );
-      }
+      setState(() {
+        _userId = session.user?.id;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Logged in anonymously: ${_userId}')),
+      );
+      // Navigate directly
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => MainScreen()),
+      );
     } catch (e) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Login failed: $e')));
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Listen for auth changes
-    supabase.auth.onAuthStateChange.listen((data) {
-      final session = data.session;
-      if (session != null) {
-        setState(() {
-          _userId = session.user?.id;
-        });
-
-        // Navigate to MainScreen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => MainScreen()),
-        );
-
-        // Optional toast
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Logged in: ${_userId}')));
-      } else {
-        setState(() {
-          _userId = null;
-        });
-      }
-    });
   }
 
   @override
