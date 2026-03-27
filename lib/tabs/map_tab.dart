@@ -427,6 +427,21 @@ class _MapTabState extends State<MapTab> {
     _mapController.move(carpark.position, 17);
   }
 
+  Carpark getNearestCarpark(LatLng position) {
+    Carpark? nearest;
+    double nearestDistance = double.infinity;
+
+    for (final carpark in _allCarparks) {
+      final distance = _distanceKm(position, carpark.position);
+      if (distance < nearestDistance) {
+        nearest = carpark;
+        nearestDistance = distance;
+      }
+    }
+
+    return nearest!;
+  }
+
   Future<LocationSearchResult?> _searchLocation(String query) async {
     final uri = Uri.parse(_oneMapSearchUrl).replace(
       queryParameters: {
