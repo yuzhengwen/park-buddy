@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../screens/parking_session_detail_screen.dart';
+=======
+import '../utils/parking_service.dart';
+import '../UI/CarCard.dart';
+>>>>>>> cfae2d9c3588127ca31bac1e36957ac776fd84de
 
 class MyParkingTab extends StatefulWidget {
   @override
@@ -8,13 +13,18 @@ class MyParkingTab extends StatefulWidget {
 }
 
 class _MyParkingTabState extends State<MyParkingTab> {
+<<<<<<< HEAD
   final supabase = Supabase.instance.client;
+=======
+  final _parkingService = ParkingService();
+>>>>>>> cfae2d9c3588127ca31bac1e36957ac776fd84de
   List<Map<String, dynamic>> cars = [];
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
+<<<<<<< HEAD
     fetchCars();
   }
 
@@ -24,6 +34,15 @@ class _MyParkingTabState extends State<MyParkingTab> {
         .select();
     setState(() {
       cars = List<Map<String, dynamic>>.from(response);
+=======
+    _loadCars();
+  }
+
+  Future<void> _loadCars() async {
+    final data = await _parkingService.fetchCars();
+    setState(() {
+      cars = data;
+>>>>>>> cfae2d9c3588127ca31bac1e36957ac776fd84de
       isLoading = false;
     });
   }
@@ -42,6 +61,7 @@ class _MyParkingTabState extends State<MyParkingTab> {
               : ListView.builder(
                   itemCount: cars.length,
                   itemBuilder: (context, index) {
+<<<<<<< HEAD
                     return CarCard(car: cars[index]);
                   },
                 ),
@@ -173,6 +193,15 @@ class _CarCardState extends State<CarCard> {
           ]
         ],
       ),
+=======
+                    return CarCard(
+                      car: cars[index],
+                      parkingService: _parkingService,
+                    );
+                  },
+                ),
+>>>>>>> cfae2d9c3588127ca31bac1e36957ac776fd84de
     );
   }
 }
+
