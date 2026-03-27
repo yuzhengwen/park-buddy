@@ -84,17 +84,6 @@ class _AddCarScreenState extends State<AddCarScreen> {
     bool isEditing = widget.carToEdit != null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? "Edit Vehicle" : "Add New Vehicle"),
-        actions: [
-          // --- DELETE BUTTON ONLY IN EDIT MODE ---
-          if (isEditing)
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
-              onPressed: () => _confirmDelete(),
-            ),
-        ],
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -125,7 +114,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
         padding: const EdgeInsets.all(16.0),
         child: SafeArea(
           child: Column(
-            mainAxisSize: MainAxisSize.min, // Important: Shrinks to fit the buttons
+            mainAxisSize: MainAxisSize.min,
             children: [
               // --- PRIMARY BUTTON (Add or Update) ---
               ElevatedButton(
