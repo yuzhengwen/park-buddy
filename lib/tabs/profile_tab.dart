@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/auth.dart'; // <- import your reusable logout function
 import '../screens/family_screen.dart'; // <- import the family screen
+import '../screens/car_screen.dart'; // <- import the car screen
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
@@ -74,7 +75,11 @@ class _ProfileTabState extends State<ProfileTab> {
                     icon: Icons.directions_car,
                     label: 'Cars',
                     color: Colors.blueAccent,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => CarScreen()),
+                      );},
                   ),
                 ),
                 const SizedBox(width: 15),
@@ -129,26 +134,3 @@ class _ProfileTabState extends State<ProfileTab> {
     );
   }
 }
-  // Widget build(BuildContext context) {
-  //   return Center(
-  //     child: Column(
-  //       mainAxisAlignment: MainAxisAlignment.center,
-  //       children: [
-  //         Text(
-  //           "Profile Tab Screen",
-  //           style: TextStyle(fontSize: 24),
-  //         ),
-  //         SizedBox(height: 24),
-  //         ElevatedButton(
-  //           onPressed: () => signOut(context),
-  //           style: ElevatedButton.styleFrom(
-  //             backgroundColor: Colors.red,
-  //           ),
-  //           child: Text('Logout'),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-  
-// }
