@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:park_buddy/screens/location_picker/location_picker_screen.dart';
 import 'package:park_buddy/screens/location_picker/location.dart';
+import 'package:park_buddy/utils/parking_service.dart';
+import 'package:park_buddy/utils/car_icons.dart';
 
 class StartParkingSessionScreen extends StatefulWidget {
   const StartParkingSessionScreen({super.key});
@@ -17,17 +19,13 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
   final TextEditingController _sessionDescController = TextEditingController();
   final TextEditingController _rateThresholdController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
+  final ParkingService _parkingService = ParkingService();
 
   CarparkLocation? _selectedLocation;
   String? _selectedCar;
   File? _parkingPicture;
 
-  // TODO: placeholder cars
-  final List<String> _cars = [
-    'Toyota Camry - ABC123',
-    'Honda Civic - XYZ789',
-    'Tesla Model 3 - TES001',
-  ];
+  List<Map<String, dynamic>> _cars = [];
 
   // TODO: placeholder locations
   final List<CarparkLocation> _carparks = [
@@ -146,6 +144,17 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
     return _selectedLocation != null && _selectedCar != null;
   }
 
+  Future<void> _loadCars() async {
+    final data = await _parkingService.fetchCars();
+    setState(() => _cars = data);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCars();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -168,15 +177,26 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
                 // 2. Car selection
                 ListTile(
                   leading: const ListIcon(Icons.directions_car),
-                  title: DropdownMenu(
-                    width: double.infinity,
+                  title: DropdownMenu<String>(
+                    expandedInsets: EdgeInsets.zero,
                     hintText: 'Car',
-                    onSelected: (String? selectedCar) {
-                      setState(() { _selectedCar = selectedCar; });
+                    onSelected: (String? selectedCarplate) {
+                      setState(() { _selectedCar = selectedCarplate; });
                     },
                     dropdownMenuEntries: _cars
-                      .map((car) => DropdownMenuEntry(value: car, label: car))
-                      .toList(),
+                        .map(
+                          (car) => DropdownMenuEntry<String>(
+                            value: car['carplate'],
+                            label: car['carname'],
+                            labelWidget: ListTile(
+                              title: Text(car['carname']),
+                              subtitle: Text(car['carplate']),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            leadingIcon: Icon(carIcons[car['caricon']]),
+                          ),
+                        )
+                        .toList(),
                   ),
                 ),
                 // 3. Session name
