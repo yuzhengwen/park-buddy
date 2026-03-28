@@ -242,11 +242,14 @@ class _FamilyScreenState extends State<FamilyScreen> {
 
         // 🔹 Member list
         Expanded(
-          child: FamilyMembersList(
-            members: members,
-            ownerId: ownerId,
-            isOwner: isOwner,
-            onKick: _handleKick,
+          child: RefreshIndicator(
+            onRefresh: loadFamily,
+            child: FamilyMembersList(
+              members: members,
+              ownerId: ownerId,
+              isOwner: isOwner,
+              onKick: _handleKick,
+            ),
           ),
         ),
         Padding(

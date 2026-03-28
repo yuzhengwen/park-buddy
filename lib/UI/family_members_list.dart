@@ -17,6 +17,8 @@ class FamilyMembersList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      physics:
+          const AlwaysScrollableScrollPhysics(), // Ensure pull-to-refresh works even if list is short
       itemCount: members.length,
       itemBuilder: (context, index) {
         final member = members[index];
