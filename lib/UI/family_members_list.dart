@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 class FamilyMembersList extends StatelessWidget {
   final List<Map<String, dynamic>> members;
   final String ownerId;
+  final bool isOwner;
+  final void Function(Map<String, dynamic> member)? onKick;
 
   const FamilyMembersList({
     super.key,
     required this.members,
     required this.ownerId,
+    this.isOwner = false,
+    this.onKick,
   });
 
   @override
@@ -16,13 +20,13 @@ class FamilyMembersList extends StatelessWidget {
       itemCount: members.length,
       itemBuilder: (context, index) {
         final member = members[index];
-        final isOwner = member['userid'] == ownerId;
+        final isMemberOwner = member['userid'] == ownerId;
         return ListTile(
           leading: const Icon(Icons.person),
           title: Row(
             children: [
               Text(member['username']),
-              if (isOwner)
+              if (isMemberOwner)
                 Container(
                   margin: const EdgeInsets.only(left: 8),
                   padding: const EdgeInsets.symmetric(
@@ -40,6 +44,12 @@ class FamilyMembersList extends StatelessWidget {
                 ),
             ],
           ),
+          trailing: isOwner && !isMemberOwner
+              ? IconButton(
+                  icon: const Icon(Icons.remove_circle, color: Colors.red),
+                  onPressed: () => onKick?.call(member),
+                )
+              : null,
         );
       },
     );

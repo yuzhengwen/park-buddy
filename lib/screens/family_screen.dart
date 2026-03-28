@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:park_buddy/UI/family_header.dart';
 import 'package:park_buddy/UI/family_members_list.dart';
+import 'package:park_buddy/UI/generic_dialog_utils.dart';
 import '../utils/family_service.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
@@ -129,7 +130,42 @@ class _FamilyScreenState extends State<FamilyScreen> {
     });
   }
 
+  Future<void> _handleKick(Map<String, dynamic> member) async {
+    final username = member['username'];
+    if (!await GenericDialogUtils.confirm(
+      context: context,
+      title: 'Kick Member?',
+      message: 'Remove ${member['username']} from the family?',
+      confirmLabel: 'Kick',
+      destructive: true,
+    ))
+      return;
+    try {
+      await _familyService.kickMember(joinCode, member['userid']);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$username has been removed')));
+        await loadFamily();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   Future<void> _handleLeave() async {
+    if (!await GenericDialogUtils.confirm(
+      context: context,
+      title: 'Leave Family?',
+      message: 'Are you sure you want to leave the family?',
+      confirmLabel: 'Leave',
+      destructive: true,
+    ))
+      return;
     setState(() => _isDeleting = true);
     try {
       await _familyService.leaveFamily(joinCode);
@@ -193,8 +229,15 @@ class _FamilyScreenState extends State<FamilyScreen> {
 
   bool _isDeleting = false;
   Future<void> _handleDelete() async {
-    bool confirm = await _showDeleteDialog();
-    if (!confirm) return;
+    if (!await GenericDialogUtils.confirm(
+      context: context,
+      title: 'Delete Family?',
+      message:
+          'This will remove all members and cars. This action cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    ))
+      return;
 
     setState(() => _isDeleting = true);
 
@@ -219,32 +262,6 @@ class _FamilyScreenState extends State<FamilyScreen> {
     } finally {
       if (mounted) setState(() => _isDeleting = false);
     }
-  }
-
-  Future<bool> _showDeleteDialog() async {
-    return await showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Delete Family?'),
-            content: const Text(
-              'This will remove all members and cars. This action cannot be undone.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
-          ),
-        ) ??
-        false;
   }
 
   @override
@@ -281,7 +298,12 @@ class _FamilyScreenState extends State<FamilyScreen> {
 
         // 🔹 Member list
         Expanded(
-          child: FamilyMembersList(members: members, ownerId: ownerId),
+          child: FamilyMembersList(
+            members: members,
+            ownerId: ownerId,
+            isOwner: isOwner,
+            onKick: _handleKick,
+          ),
         ),
         Padding(
           padding: const EdgeInsets.all(20.0),

@@ -9,6 +9,14 @@ class FamilyService {
         .eq('familyjoincode', joinCode);
   }
 
+  Future<void> kickMember(String joinCode, String userId) async {
+    await supabase
+        .from('familyuser')
+        .delete()
+        .eq('familyjoincode', joinCode)
+        .eq('userid', userId);
+  }
+
   Future<Map<String, dynamic>?> getUserFamily() async {
     final userId = supabase.auth.currentUser!.id;
 
