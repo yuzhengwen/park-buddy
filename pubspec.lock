@@ -254,8 +254,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
-<<<<<<< HEAD
-=======
   flutter_map:
     dependency: "direct main"
     description:
@@ -264,22 +262,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "8.2.2"
->>>>>>> cfae2d9c3588127ca31bac1e36957ac776fd84de
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
       name: flutter_plugin_android_lifecycle
-<<<<<<< HEAD
-      sha256: "38d1c268de9097ff59cf0e844ac38759fc78f76836d37edad06fa21e182055a0"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.0.34"
-=======
       sha256: ee8068e0e1cd16c4a82714119918efdeed33b3ba7772c54b5d094ab53f9b7fd1
       url: "https://pub.dev"
     source: hosted
     version: "2.0.33"
->>>>>>> cfae2d9c3588127ca31bac1e36957ac776fd84de
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -430,17 +420,10 @@ packages:
     dependency: transitive
     description:
       name: image_picker_android
-<<<<<<< HEAD
-      sha256: "9eae0cbd672549dacc18df855c2a23782afe4854ada5190b7d63b30ee0b0d3fd"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.8.13+15"
-=======
       sha256: eda9b91b7e266d9041084a42d605a74937d996b87083395c5e47835916a86156
       url: "https://pub.dev"
     source: hosted
     version: "0.8.13+14"
->>>>>>> cfae2d9c3588127ca31bac1e36957ac776fd84de
   image_picker_for_web:
     dependency: transitive
     description:
@@ -490,11 +473,7 @@ packages:
     source: hosted
     version: "0.2.2"
   intl:
-<<<<<<< HEAD
     dependency: "direct main"
-=======
-    dependency: transitive
->>>>>>> cfae2d9c3588127ca31bac1e36957ac776fd84de
     description:
       name: intl
       sha256: "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
