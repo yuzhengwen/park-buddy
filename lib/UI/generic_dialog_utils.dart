@@ -47,4 +47,35 @@ class GenericDialogUtils {
         ) ??
         false;
   }
+
+  static Future<String> prompt({
+    required BuildContext context,
+    required String title,
+    String hintText = '',
+    String confirmLabel = 'OK',
+    String cancelLabel = 'Cancel',
+  }) async {
+    final controller = TextEditingController();
+    return await showDialog<String>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(title),
+            content: TextField(
+              controller: controller,
+              decoration: InputDecoration(hintText: hintText),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, null),
+                child: Text(cancelLabel),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+                child: Text(confirmLabel),
+              ),
+            ],
+          ),
+        ) ??
+        '';
+  }
 }
