@@ -118,16 +118,22 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                String email = await GenericDialogUtils.prompt(
+                final email = await GenericDialogUtils.prompt(
                   context: context,
                   title: 'Enter your email',
                   hintText: 'Email',
+                  validator: (value) {
+                    if (value.isEmpty) return 'Email cannot be empty';
+                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                      return 'Enter a valid email';
+                    }
+                    return null;
+                  },
                 );
-                if (email.isNotEmpty) {
-                  signInWithMagicLink(email);
-                }
+                if (email == null) return; // user cancelled
+                signInWithMagicLink(email);
               },
-              child: Text('Sign in with Magic Link'),
+              child: const Text('Sign in with Magic Link'),
             ),
 
             SizedBox(height: 16),

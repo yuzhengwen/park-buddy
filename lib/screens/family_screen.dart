@@ -26,86 +26,30 @@ class _FamilyScreenState extends State<FamilyScreen> {
     loadFamily();
   }
 
-  void _showEditNameDialog() {
-    final TextEditingController controller = TextEditingController(
-      text: familyName,
-    );
-    bool _isSaving = false;
-
-    showDialog(
+  void _showEditNameDialog() async {
+    final newName = await GenericDialogUtils.prompt(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text("Edit Family Name"),
-              content: TextField(
-                controller: controller,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: "Family Name",
-                  border: OutlineInputBorder(),
-                ),
-                maxLength: 50,
-              ),
-              actions: [
-                TextButton(
-                  onPressed: _isSaving ? null : () => Navigator.pop(context),
-                  child: const Text("Cancel"),
-                ),
-                ElevatedButton(
-                  onPressed: _isSaving
-                      ? null
-                      : () async {
-                          final newName = controller.text.trim();
-                          if (newName.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Name cannot be empty'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-                          setDialogState(() => _isSaving = true);
-                          try {
-                            await _familyService.updateFamilyName(
-                              joinCode,
-                              newName,
-                            );
-                            if (mounted) {
-                              setState(() => familyName = newName);
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Family name updated'),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            setDialogState(() => _isSaving = false);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(e.toString()),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        },
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text("Save"),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      title: 'Edit Family Name',
+      initialValue: familyName,
+      labelText: 'Family Name',
+      confirmLabel: 'Save',
+      maxLength: 50,
+      validator: (v) => v.isEmpty ? 'Name cannot be empty' : null,
+      sanitize: (v) =>
+          v.replaceAll(RegExp(r'\s+'), ' '), // collapse double spaces
     );
+    if (newName == null || !mounted) return;
+    try {
+      await _familyService.updateFamilyName(joinCode, newName);
+      setState(() => familyName = newName);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Family name updated')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    }
   }
 
   Future<void> loadFamily() async {
