@@ -1,19 +1,18 @@
 import 'dart:core';
 import 'package:flutter/material.dart';
-import 'package:park_buddy/screens/location_picker/location.dart';
-
+import 'package:park_buddy/models/carpark.dart';
 
 // Bottom sheet holding the list of carpark locations
 class CarparkPickerBottomSheet extends StatelessWidget {
-  final List<CarparkLocation> _carparks;
-  final void Function(CarparkLocation carpark)? _onItemSelect;
+  final List<Carpark> _carparks;
+  final void Function(Carpark carpark)? _onItemSelect;
   final ValueNotifier<double> _sheetSize;
   final DraggableScrollableController _controller;
 
   const CarparkPickerBottomSheet({
     super.key,
-    required List<CarparkLocation> carparks,
-    void Function(CarparkLocation carpark)? onItemSelect,
+    required List<Carpark> carparks,
+    void Function(Carpark carpark)? onItemSelect,
     required ValueNotifier<double> sheetSize,
     required DraggableScrollableController controller,
   }) : _carparks = carparks,
@@ -62,25 +61,22 @@ class CarparkPickerBottomSheet extends StatelessWidget {
             child: CustomScrollView(
               controller: scrollController,
               slivers: [
-                // SliverToBoxAdapter(
-                //   child: Center(
-                //     child: Container(
-                //       margin: const EdgeInsets.symmetric(vertical: 12),
-                //       width: 40,
-                //       height: 4,
-                //       decoration: BoxDecoration(
-                //         color: Colors.grey[300],
-                //         borderRadius: BorderRadius.circular(2),
-                //       ),
-                //     ),
-                //   ),
-                // ),
                 if (_carparks.isNotEmpty)
                   SliverList.builder(
                     itemCount: _carparks.length,
                     itemBuilder: (context, index) {
+                      final carpark = _carparks[index];
                       return ListTile(
-                        title: Text(_carparks[index].name),
+                        title: Text(carpark.address),
+                        subtitle: Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(text: 'Car park: ${carpark.carParkNo}\n'),
+                              // TODO: carpark availability
+                              TextSpan(text: '${carpark.carParkType} • ${carpark.shortTermParking}'),
+                            ],
+                          ),
+                        ),
                         onTap: () => _onItemSelect?.call(_carparks[index]),
                       );
                     },

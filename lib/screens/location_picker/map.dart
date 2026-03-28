@@ -2,17 +2,17 @@ import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:park_buddy/screens/location_picker/location.dart';
+import 'package:park_buddy/models/carpark.dart';
 
 // Map of carparks with interactive carpark marker pins
 class CarparkPickerMap extends StatelessWidget {
   final MapController _mapController;
   final LatLng _initialMapCenter;
   final double _initialMapZoom;
-  final List<CarparkLocation> _carparks;
+  final List<Carpark> _carparks;
   final LatLng? _userLocation;
   final void Function(LatLngBounds)? _onChangedBounds;
-  final void Function(CarparkLocation carpark)? _onMarkerSelect;
+  final void Function(Carpark carpark)? _onMarkerSelect;
   final ValueNotifier<double> _sheetSize;
 
   const CarparkPickerMap({
@@ -20,10 +20,10 @@ class CarparkPickerMap extends StatelessWidget {
     required MapController mapController,
     LatLng? initialMapCenter,
     double? initialMapZoom,
-    required List<CarparkLocation> carparks,
+    required List<Carpark> carparks,
     LatLng? userLocation,
     void Function(LatLngBounds)? onChangedBounds,
-    void Function(CarparkLocation carpark)? onMarkerSelect,
+    void Function(Carpark carpark)? onMarkerSelect,
     required ValueNotifier<double> sheetSize,
   }) : _mapController = mapController,
        _initialMapCenter = initialMapCenter ?? const LatLng(1.3521, 103.8198),
@@ -84,22 +84,22 @@ class CarparkPickerMap extends StatelessWidget {
 
 // Map layer for markers (pins) within the visible map viewport
 class BoundedMarkerLayer extends StatelessWidget {
-  final List<CarparkLocation> _carparks;
+  final List<Carpark> _carparks;
   final LatLng? _userLocation;
-  final void Function(CarparkLocation carpark)? _onMarkerSelect;
+  final void Function(Carpark carpark)? _onMarkerSelect;
 
   const BoundedMarkerLayer({
     super.key,
-    required List<CarparkLocation> carparks,
+    required List<Carpark> carparks,
     required LatLng? userLocation,
-    void Function(CarparkLocation carpark)? onMarkerSelect,
+    void Function(Carpark carpark)? onMarkerSelect,
   }) : _carparks = carparks,
        _userLocation = userLocation,
        _onMarkerSelect = onMarkerSelect;
 
   // Helper function to create Marker objects from carpark details
-  Marker _createMarker(CarparkLocation carpark) => Marker(
-    point: carpark.coords,
+  Marker _createMarker(Carpark carpark) => Marker(
+    point: carpark.position,
     height: 70,
     width: 160,
     alignment: Alignment.topCenter,
@@ -113,7 +113,7 @@ class BoundedMarkerLayer extends StatelessWidget {
           Stack(
             children: <Widget>[
               Text(
-                carpark.name,
+                carpark.address,
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
                 maxLines: 2,
@@ -125,7 +125,7 @@ class BoundedMarkerLayer extends StatelessWidget {
                 ),
               ),
               Text(
-                carpark.name,
+                carpark.address,
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
                 maxLines: 2,
