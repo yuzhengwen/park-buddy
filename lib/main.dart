@@ -7,7 +7,11 @@ void main() async {
 
   await Supabase.initialize(
     url: 'https://saslrisbvxdwowextgbh.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhc2xyaXNidnhkd293ZXh0Z2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NTcyMjcsImV4cCI6MjA4OTEzMzIyN30.QSNyqc0leDJ6IOnWQW053r4NFaq2nrnS5LCYPFaJ4s8',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhc2xyaXNidnhkd293ZXh0Z2JoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1NTcyMjcsImV4cCI6MjA4OTEzMzIyN30.QSNyqc0leDJ6IOnWQW053r4NFaq2nrnS5LCYPFaJ4s8',
+    authOptions: FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.pkce, // Recommended for mobile
+    ),
   );
   runApp(const MyApp());
 }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/auth.dart'; // <- import your reusable logout function
 import '../screens/family_screen.dart'; // <- import the family screen
 import '../screens/car_screen.dart'; // <- import the car screen
+import '../screens/edit_profile.dart';
+import '../services/user_service.dart'; // <- import the user service to fetch profile data
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
@@ -12,59 +13,80 @@ class ProfileTab extends StatefulWidget {
 }
 
 class _ProfileTabState extends State<ProfileTab> {
-  final supabase = Supabase.instance.client;
-  String? get userId => supabase.auth.currentUser?.userMetadata?['full_name'] ?? 'anonymous';
-  String? get userEmail => supabase.auth.currentUser?.email ?? 'No email';
+  final UserService _userService = UserService();
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+      return Scaffold(
+      body: FutureBuilder<Map<String, dynamic>?>(
+        // Point directly to your service
+        future: _userService.getProfile(),
+        builder: (context, snapshot) {
+          // 1. Show loading spinner while waiting for Supabase
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            // Profile Picture
-            const CircleAvatar(
-              radius: 60,
-              //backgroundImage: NetworkImage('https://via.placeholder.com/150'),
-              child: Icon(Icons.person, size: 50, color: Colors.white),
-            ),
-            const SizedBox(height: 15),
+          // 2. Extract data (Fallbacks included)
+          final profileData = snapshot.data;
+          final String username = profileData?['username'] ?? "No Name Set";
+          final String? avatarUrl = profileData?['profilepic'];
+          final String userEmail = _userService.email;
 
-            // Username & Email
-            Text(
-              '$userId',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              '$userEmail',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-            const SizedBox(height: 20),
-
-            // Edit Profile Button
-            Row(
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
               children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Edit Profile'),
-                  ),
+                // Profile Picture (Updates dynamically)
+                CircleAvatar(
+                  radius: 60,
+                  backgroundColor: const Color(0xFF6200EA),
+                  backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                  child: avatarUrl == null 
+                      ? const Icon(Icons.person, size: 50, color: Colors.white) 
+                      : null,
                 ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.logout, color: Colors.white),
-                    label: const Text('Logout'),
-                    onPressed: () => signOut(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
+                const SizedBox(height: 15),
+
+                // Username & Email
+                Text(
+                  username,
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  userEmail,
+                  style: const TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+                const SizedBox(height: 20),
+
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final updated = await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+                          );
+                          // Rebuilds the FutureBuilder to fetch new data
+                          if (updated == true) setState(() {});
+                        },
+                        icon: const Icon(Icons.edit),
+                        label: const Text('Edit Profile'),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.logout, color: Colors.white),
+                        label: const Text('Logout'),
+                        onPressed: () => signOut(context),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
             const Divider(height: 40),
 
             // Action Buttons (Cars & Family)
@@ -92,16 +114,18 @@ class _ProfileTabState extends State<ProfileTab> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => FamilyScreen()),
-                      );
-                    },
-                  ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
-    );
+          ); // End of SingleChildScrollView
+        },
+      ), 
+    ); // End of Scaffold
   }
 
   // Helper method to keep the code DRY (Don't Repeat Yourself)
@@ -116,7 +140,7 @@ class _ProfileTabState extends State<ProfileTab> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: color),
         ),
