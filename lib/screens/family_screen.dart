@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:park_buddy/UI/family_header.dart';
+import 'package:park_buddy/UI/family_members_list.dart';
 import '../utils/family_service.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 class FamilyScreen extends StatefulWidget {
   const FamilyScreen({super.key});
@@ -19,6 +23,88 @@ class _FamilyScreenState extends State<FamilyScreen> {
   void initState() {
     super.initState();
     loadFamily();
+  }
+
+  void _showEditNameDialog() {
+    final TextEditingController controller = TextEditingController(
+      text: familyName,
+    );
+    bool _isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text("Edit Family Name"),
+              content: TextField(
+                controller: controller,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: "Family Name",
+                  border: OutlineInputBorder(),
+                ),
+                maxLength: 50,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: _isSaving ? null : () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: _isSaving
+                      ? null
+                      : () async {
+                          final newName = controller.text.trim();
+                          if (newName.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Name cannot be empty'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          setDialogState(() => _isSaving = true);
+                          try {
+                            await _familyService.updateFamilyName(
+                              joinCode,
+                              newName,
+                            );
+                            if (mounted) {
+                              setState(() => familyName = newName);
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Family name updated'),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setDialogState(() => _isSaving = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(e.toString()),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text("Save"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> loadFamily() async {
@@ -178,38 +264,12 @@ class _FamilyScreenState extends State<FamilyScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 🔹 Header section
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          color: Colors.grey[200],
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                familyName,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Text("Join Code: "),
-                  SelectableText(
-                    joinCode,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        FamilyHeader(
+          familyName: familyName,
+          joinCode: joinCode,
+          isOwner: isOwner,
+          onEditName: _showEditNameDialog,
         ),
-
         // 🔹 Members title
         const Padding(
           padding: EdgeInsets.all(16),
@@ -221,41 +281,7 @@ class _FamilyScreenState extends State<FamilyScreen> {
 
         // 🔹 Member list
         Expanded(
-          child: ListView.builder(
-            itemCount: members.length,
-            itemBuilder: (context, index) {
-              final member = members[index];
-              final isOwner = member['userid'] == ownerId;
-              debugPrint("Member: ${member['username']}, ownerId: $ownerId, userId: ${member['userid']}, isOwner: $isOwner");
-              return ListTile(
-                leading: const Icon(Icons.person),
-                title: Row(
-                  children: [
-                    Text(member['username']),
-                    if (isOwner)
-                      Container(
-                        margin: const EdgeInsets.only(left: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.amber,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'OWNER',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            },
-          ),
+          child: FamilyMembersList(members: members, ownerId: ownerId),
         ),
         Padding(
           padding: const EdgeInsets.all(20.0),
