@@ -214,7 +214,9 @@ class _FamilyScreenState extends State<FamilyScreen> {
     }
     return Scaffold(
       appBar: AppBar(title: const Text('Family Management')),
-      body: isInFamily ? _buildFamilyView() : _buildNoFamilyView(),
+      body: SafeArea(
+        child: isInFamily ? _buildFamilyView() : _buildNoFamilyView(),
+      ),
     );
   }
 
