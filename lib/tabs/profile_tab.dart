@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/auth.dart'; // <- import your reusable logout function
 import '../screens/family_screen.dart'; // <- import the family screen
 import '../screens/car_screen.dart'; // <- import the car screen
@@ -141,7 +140,7 @@ class _ProfileTabState extends State<ProfileTab> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: color),
         ),

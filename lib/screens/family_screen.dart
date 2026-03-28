@@ -3,8 +3,6 @@ import 'package:park_buddy/UI/family_header.dart';
 import 'package:park_buddy/UI/family_members_list.dart';
 import 'package:park_buddy/UI/generic_dialog_utils.dart';
 import '../utils/family_service.dart';
-import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart';
 
 class FamilyScreen extends StatefulWidget {
   const FamilyScreen({super.key});

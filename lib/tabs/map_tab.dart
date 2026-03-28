@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:park_buddy/UI/carpark_marker.dart';
 import 'package:park_buddy/UI/current_location_marker.dart';
 import 'package:park_buddy/UI/search_location_marker.dart';
+import 'package:park_buddy/models/carpark.dart';
 
 import '../screens/start_parking_session_screen.dart';
 import '../UI/carpark_list_panel.dart';
@@ -74,7 +75,7 @@ class _MapTabState extends State<MapTab> {
     );
   }
 
-  void _focusCarpark(carpark) {
+  void _focusCarpark(Carpark carpark) {
     _controller.focusCarpark(
       carpark,
       onMoveMap: () => _mapController.move(carpark.position, 17),

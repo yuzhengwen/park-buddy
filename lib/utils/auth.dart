@@ -5,9 +5,9 @@ import '../screens/login_screen.dart';
 Future<void> signOut(BuildContext context) async {
   try {
     await Supabase.instance.client.auth.signOut();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Logged out successfully')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Logged out successfully')));
 
     // Navigate back to login and remove all previous routes
     Navigator.pushAndRemoveUntil(
@@ -16,8 +16,8 @@ Future<void> signOut(BuildContext context) async {
       (route) => false,
     );
   } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Logout failed: $e')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
   }
 }

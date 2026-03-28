@@ -61,12 +61,12 @@ class ApiController {
       if (decoded is Map) {
         // Adjust 'records' to whatever key your JSON uses (e.g., 'items' or 'data')
         records = decoded['records'] ?? [];
-        print(
+        debugPrint(
           "Detected Map structure. Found ${records.length} records under key 'records'",
         );
       } else {
         records = decoded as List<dynamic>;
-        print("Detected List structure. Found ${records.length} records");
+        debugPrint("Detected List structure. Found ${records.length} records");
       }
 
       final list = records
@@ -76,7 +76,7 @@ class ApiController {
             );
             if (carpark == null) {
               // This is your smoking gun
-              print(
+              debugPrint(
                 "FAILED TO PARSE RECORD: ${record['car_park_no'] ?? record['address']}",
               );
             }
