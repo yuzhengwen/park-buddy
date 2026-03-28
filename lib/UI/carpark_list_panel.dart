@@ -31,43 +31,55 @@ class CarparkListPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        height: isListCollapsed ? 82 : 280,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 16,
-              offset: Offset(0, -4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            const SizedBox(height: 8),
-            _PanelHandle(
-              carparkCount: visibleCarparks.length,
-              isCollapsed: isListCollapsed,
-              onToggle: onToggleCollapse,
-            ),
-            if (!isListCollapsed)
-              Expanded(
-                child: _CarparkListBody(
-                  visibleCarparks: visibleCarparks,
-                  isLoadingCarparks: isLoadingCarparks,
-                  loadError: loadError,
-                  listOrigin: listOrigin,
-                  selectedCarparkNo: selectedCarparkNo,
-                  onCarparkTap: onCarparkTap,
-                  onRetry: onRetry,
-                ),
+    return GestureDetector(
+      onVerticalDragEnd: (details) {
+        if (details.primaryVelocity! < 0) {
+          // dragging up = expand
+          onToggleCollapse();
+        } else {
+          // dragging down = collapse
+          onToggleCollapse();
+        }
+      },
+
+      child: SafeArea(
+        top: false,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          height: isListCollapsed ? 82 : 280,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black26,
+                blurRadius: 16,
+                offset: Offset(0, -4),
               ),
-          ],
+            ],
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 8),
+              _PanelHandle(
+                carparkCount: visibleCarparks.length,
+                isCollapsed: isListCollapsed,
+                onToggle: onToggleCollapse,
+              ),
+              if (!isListCollapsed)
+                Expanded(
+                  child: _CarparkListBody(
+                    visibleCarparks: visibleCarparks,
+                    isLoadingCarparks: isLoadingCarparks,
+                    loadError: loadError,
+                    listOrigin: listOrigin,
+                    selectedCarparkNo: selectedCarparkNo,
+                    onCarparkTap: onCarparkTap,
+                    onRetry: onRetry,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
