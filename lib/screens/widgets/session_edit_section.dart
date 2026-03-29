@@ -20,6 +20,7 @@ class _SessionEditSectionState extends State<SessionEditSection> {
   final _descController = TextEditingController();
   final _rateController = TextEditingController();
   String? _pendingLocation;
+  LatLng? _pendingLatLng; 
 
   final List<CarparkLocation> _carparks = [];
 
@@ -59,6 +60,7 @@ class _SessionEditSectionState extends State<SessionEditSection> {
             : _descController.text.trim(),
         rateThreshold: double.tryParse(_rateController.text.trim()),
         location: _pendingLocation,
+        carparkPosition: _pendingLatLng,
       );
       setState(() => _editingField = null);
     } catch (e) {
@@ -70,23 +72,26 @@ class _SessionEditSectionState extends State<SessionEditSection> {
     }
   }
 
-  Future<void> _pickLocation(
-      BuildContext context, ParkingSessionController c) async {
-    final CarparkLocation? result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => CarparkPickerScreen(
-          carparks: _carparks,
-          initialMapCenter: c.session?.location != null
-              ? null // pass LatLng if you have coords stored
-              : null,
-        ),
+Future<void> _pickLocation(
+    BuildContext context, ParkingSessionController c) async {
+  final CarparkLocation? result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => CarparkPickerScreen(
+        carparks: _carparks,
+        initialMapCenter: c.session?.carparkPosition,
       ),
-    );
-    if (result != null) {
-      setState(() => _pendingLocation = result.name);
-    }
+    ),
+  );
+  if (result != null) {
+    setState(() {
+      // Store as "x_coord,y_coord" SVY21 to match DB format
+      // You'll need to expose x/y from CarparkLocation or Carpark
+      _pendingLocation = result.name; // UPDATE once carpark code is available
+      _pendingLatLng = result.coords;
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {
