@@ -6,6 +6,7 @@ import 'package:park_buddy/utils/parking_service.dart';
 import 'package:park_buddy/utils/car_icons.dart';
 import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/services/parking_session_service.dart';
+import 'package:park_buddy/services/storage_service.dart';
 
 class StartParkingSessionScreen extends StatefulWidget {
   final Carpark? initialCarpark;
@@ -23,12 +24,12 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
   final _picker = ImagePicker();
   final _parkingService = ParkingService();
   final _parkingSessionService = ParkingSessionService();
+  final _storageService = StorageService();
 
   List<Map<String, dynamic>> _cars = [];
-
   Carpark? _selectedLocation;
   String? _selectedCarPlate;
-  File? _parkingPicture;
+  List<File> _parkingPictures = const [];
   bool _isLoading = false;
 
   @override
@@ -54,7 +55,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
 
       setState(() => _isLoading = true);
 
-      await _parkingSessionService.createParkingSession(
+      final session = await _parkingSessionService.createParkingSession(
         carPlate: _selectedCarPlate!,
         carparkLocation: _selectedLocation!.position,
         carparkName: _selectedLocation!.address,
@@ -62,6 +63,20 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
         sessionDescription: sessionDesc.isNotEmpty ? sessionDesc : null,
         rateThreshold: double.tryParse(_rateThresholdController.text),
       );
+
+      if (_parkingPictures.isNotEmpty) {
+        // Upload images in parallel
+        final imgUrls = await Future.wait(
+          _parkingPictures.map((img) async {
+            final bytes = await img.readAsBytes();
+            return _storageService.uploadImage(session.sessionId, bytes);
+          }),
+        );
+
+        // Create the image links in the database
+        await _parkingSessionService.updateSessionImages(session.sessionId, imgUrls);
+      }
+
       if (mounted) Navigator.pop(context);
 
     } catch (e) {
@@ -94,24 +109,44 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
     }
   }
 
-  Future<void> _takeParkingPicture({
-    required BuildContext context,
-  }) async {
+  Future<XFile?> _pickImageWithSheet() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Camera'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return null;
+
+    return _picker.pickImage(source: source, imageQuality: 85);
+  }
+
+  Future<void> _editParkingImage() async {
     try {
-      final XFile? photo = await _picker.pickImage(
-        source: ImageSource.camera,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
-      );
+      final photo = await _pickImageWithSheet();
  
       if (photo != null) {
         setState(() {
-          _parkingPicture = File(photo.path);
+          _parkingPictures = [..._parkingPictures, File(photo.path)];
         });
       }
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error taking photo: $e')),
         );
@@ -233,21 +268,28 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
                   leading: const ListIcon(Icons.camera_alt),
                   title: const Text('Photo'),
                   subtitle: const Text('Tap to take photo'),
-                  onTap: () { _takeParkingPicture(context: context); },
+                  onTap: _editParkingImage,
                 ),
                 // Show uploaded picture
-                if (_parkingPicture != null) ...[
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.file(
-                      _parkingPicture!,
-                      height: 200,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                if (_parkingPictures.isNotEmpty)
+                  SizedBox(
+                    height: 200,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: EdgeInsets.all(8),
+                      itemCount: _parkingPictures.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) => ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(
+                          _parkingPictures[index],
+                          width: 250,
+                          height: 200,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
                   ),
-                ],
               ],
             ),
           ),
