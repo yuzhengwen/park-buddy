@@ -4,7 +4,11 @@ class ParkingService {
   final _supabase = Supabase.instance.client;
 
   Future<List<Map<String, dynamic>>> fetchCars() async {
-    final response = await _supabase.from('cars').select();
+    final userId = _supabase.auth.currentUser?.id;
+    final response = await _supabase
+        .from('cars')
+        .select()
+        .eq('ownerid', userId!);
     return List<Map<String, dynamic>>.from(response);
   }
 
