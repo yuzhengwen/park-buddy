@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/parking_session_controller.dart';
 import '../../screens/location_picker/location_picker_screen.dart';
-import '../../screens/location_picker/location.dart';
-import 'package:latlong2/latlong.dart';
+import '../../models/carpark.dart';
 
 class SessionEditSection extends StatefulWidget {
-  const SessionEditSection();
+  const SessionEditSection({super.key});
 
   @override
   State<SessionEditSection> createState() => _SessionEditSectionState();
@@ -20,8 +19,6 @@ class _SessionEditSectionState extends State<SessionEditSection> {
   final _descController = TextEditingController();
   final _rateController = TextEditingController();
   String? _pendingLocation;
-
-  final List<CarparkLocation> _carparks = [];
 
   @override
   void dispose() {
@@ -72,11 +69,10 @@ class _SessionEditSectionState extends State<SessionEditSection> {
 
   Future<void> _pickLocation(
       BuildContext context, ParkingSessionController c) async {
-    final CarparkLocation? result = await Navigator.push(
+    final Carpark? result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => CarparkPickerScreen(
-          carparks: _carparks,
           initialMapCenter: c.session?.location != null
               ? null // pass LatLng if you have coords stored
               : null,
@@ -84,7 +80,7 @@ class _SessionEditSectionState extends State<SessionEditSection> {
       ),
     );
     if (result != null) {
-      setState(() => _pendingLocation = result.name);
+      setState(() => _pendingLocation = result.address);
     }
   }
 

@@ -46,18 +46,22 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
 
   /// Send the created parking session details to the database.
   Future<void> _submit() async {
-    setState(() => _isLoading = true);
-
     try {
-      final parkingSession = ParkingSession(
+      if (!_canSubmit()) throw StateError('Some required fields are empty.');
+
+      final sessionName = _sessionNameController.text;
+      final sessionDesc = _sessionDescController.text;
+
+      setState(() => _isLoading = true);
+
+      await _parkingSessionService.createParkingSession(
         carPlate: _selectedCarPlate!,
-        location: _selectedLocation!.position,
-        sessionName: _sessionNameController.text,
-        // TODO: don't need session description anymore?
-        // TODO: parking pictures
+        carparkLocation: _selectedLocation!.position,
+        carparkName: _selectedLocation!.address,
+        sessionName: sessionName.isNotEmpty ? sessionName : null,
+        sessionDescription: sessionDesc.isNotEmpty ? sessionDesc : null,
+        rateThreshold: double.tryParse(_rateThresholdController.text),
       );
-      print('parking session created');
-      await _parkingSessionService.createParkingSession(parkingSession);
       if (mounted) Navigator.pop(context);
 
     } catch (e) {
