@@ -9,13 +9,10 @@ class SessionSummaryCard extends StatelessWidget {
   final DateTime? endTime;
   final String? driverName;
   final String? carName;
-  final String? carPlate;
-  final double accumulatedFees;
-  
+  final String? carPlate;  
 
   const SessionSummaryCard({
     required this.isOngoing,
-    required this.accumulatedFees,
     this.startTime,
     this.endTime,
     this.driverName,
@@ -99,7 +96,7 @@ class SessionSummaryCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      '\$${accumulatedFees.toStringAsFixed(2)}',
+                      '\$${c.accumulatedFees.toStringAsFixed(2)}',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
@@ -147,13 +144,13 @@ class SessionSummaryCard extends StatelessWidget {
     );
   }
 
-    void _showFeeBreakdown(
-      BuildContext context, ParkingSessionController c) {
-    final billableSeconds = c.elapsed.inSeconds -
-        ((c.gracePeriodMinutes ?? 0) * 60);
-    final billableMins = billableSeconds <= 0
-        ? 0
-        : (billableSeconds / 60).floor();
+  void _showFeeBreakdown(BuildContext context, ParkingSessionController c) {
+    // 1. Get billable minutes (integer result)
+    final int billableSeconds = c.elapsed.inSeconds - (c.gracePeriodMinutes * 60);
+    final int billableMins = billableSeconds <= 0 ? 0 : billableSeconds ~/ 60;
+
+    // 2. Use the controller's blocks instead of calculating here
+    final int blocks = c.completedBlocks;
 
     showDialog(
       context: context,
@@ -163,12 +160,12 @@ class SessionSummaryCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _breakdownRow('Hourly rate',
-                '\$${c.hourlyFee?.toStringAsFixed(2) ?? '-'}'),
-            _breakdownRow('Grace period',
-                '${c.gracePeriodMinutes ?? '-'} mins'),
-            _breakdownRow(
-                'Billable time', '$billableMins mins'),
+            _breakdownRow('Zone', c.isInCentralArea ? 'Central area' : 'Outside central'),
+            _breakdownRow('Current rate', '\$${c.currentHalfHourRate.toStringAsFixed(2)} / 30 min'),
+            _breakdownRow('Grace period', '${c.gracePeriodMinutes} mins'),
+            _breakdownRow('Billable time', '$billableMins mins'),
+            // FIX: Use 'blocks' from the controller
+            _breakdownRow('Completed blocks', '$blocks × 30 min'),
             const Divider(),
             _breakdownRow(
               'Total',

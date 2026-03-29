@@ -72,31 +72,7 @@ class ParkingSessionService {
     return response?['carname'] as String?;
   }
 
-  // Returns null if location has no matching carpark or fee row
-  Future<({double hourlyFee, int gracePeriod})?> fetchFeeDetails(
-      String location) async {
-    final carparkResponse = await _supabase
-        .from('carparks')
-        .select('feeid')
-        .eq('location', location)
-        .maybeSingle();
-
-    if (carparkResponse == null) return null;
-    final feeId = carparkResponse['feeid'];
-    if (feeId == null) return null;
-
-    final feeResponse = await _supabase
-        .from('parkingfee')
-        .select('hourlyfee, graceperiod')
-        .eq('feeid', feeId)
-        .maybeSingle();
-
-    if (feeResponse == null) return null;
-    return (
-      hourlyFee: (feeResponse['hourlyfee'] as num).toDouble(),
-      gracePeriod: feeResponse['graceperiod'] as int,
-    );
-  }
+  // Removed: fetchFeeDetails — no longer using parkingfee table
 
   Future<void> endParking(
       String sessionId, DateTime endTime, double fees) async {
@@ -106,7 +82,6 @@ class ParkingSessionService {
     }).eq('sessionid', sessionId);
   }
 
-  // DB operation so it lives here, not in storage service
   Future<void> updateSessionImages(
       String sessionId, List<String> imageUrls) async {
     await _supabase.from('parkingsession').update({
@@ -119,7 +94,7 @@ class ParkingSessionService {
     required String? sessionName,
     required String? sessionDescription,
     required double? rateThreshold,
-    required String? location,
+    required String? location, // stores "x_coord,y_coord"
   }) async {
     await _supabase.from('parkingsession').update({
       'sessionname': sessionName,

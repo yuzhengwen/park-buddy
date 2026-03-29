@@ -47,7 +47,6 @@ class _ParkingSessionDetailView extends StatelessWidget {
                           // Non-editable summary card at the top
                           SessionSummaryCard(
                             isOngoing: c.isOngoing,
-                            accumulatedFees: c.accumulatedFees,
                             startTime: c.session?.startTime,
                             endTime: c.session?.endTime,
                             driverName: c.driverName,
