@@ -6,17 +6,15 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:park_buddy/utils/location.dart';
 import 'package:park_buddy/screens/location_picker/map.dart';
-import 'package:park_buddy/screens/location_picker/location.dart';
 import 'package:park_buddy/screens/location_picker/bottom_sheet.dart';
+import 'package:park_buddy/models/carpark.dart';
 
 class CarparkPickerScreen extends StatefulWidget {
   final LatLng? initialMapCenter;
   final double? initialMapZoom;
-  final List<CarparkLocation> carparks;
 
   const CarparkPickerScreen({
     super.key,
-    required this.carparks,
     this.initialMapCenter,
     this.initialMapZoom,
   });
@@ -31,8 +29,11 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
   final ValueNotifier<double> _sheetSize = ValueNotifier(0.25);
   final DraggableScrollableController _sheetController = DraggableScrollableController();
 
+  // TODO: read from API
+  final List<Carpark> _carparks = const [];
+
   LatLng? _userLocation;
-  List<CarparkLocation> _boundedCarparks = const <CarparkLocation>[];
+  List<Carpark> _boundedCarparks = const <Carpark>[];
 
   Future<void> _goToUser() async {
     try {
@@ -90,14 +91,14 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
     super.dispose();
   }
 
-  void _onConfirm(BuildContext context, CarparkLocation carpark) {
+  void _onConfirm(BuildContext context, Carpark carpark) {
     Navigator.pop(context, carpark);
   }
 
   void _onMapChangedBounds(LatLngBounds bounds) {
     setState(() {
-      _boundedCarparks = widget.carparks
-          .where((carpark) => bounds.contains(carpark.coords))
+      _boundedCarparks = _carparks
+          .where((carpark) => bounds.contains(carpark.position))
           .toList();
     });
   }

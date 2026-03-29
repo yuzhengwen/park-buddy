@@ -1,8 +1,45 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:latlong2/latlong.dart';
+import '../services/user_service.dart';
 import '../models/parking_session.dart';
 
 class ParkingSessionService {
   final _supabase = Supabase.instance.client;
+
+  Future<ParkingSession> createParkingSession({
+    String? sessionId,
+    String? driverId,
+    required String carPlate,
+    required LatLng carparkLocation,
+    required String carparkName,
+    String? sessionName,
+    String? sessionDescription,
+    double? rateThreshold,
+    List<String> images = const [],
+    DateTime? startTime,
+    DateTime? endTime,
+    double? currentFees,
+  }) async {
+  final result = await _supabase
+      .from('parkingsession')
+      .insert({
+        'sessionid': ?sessionId,
+        'driverid': driverId ?? UserService().userId,
+        'carplate': carPlate,
+        'location': '(${carparkLocation.longitude},${carparkLocation.latitude})',
+        'carparkname': carparkName,
+        'sessionname': ?sessionName,
+        'sessiondescription': ?sessionDescription,
+        'ratethreshold': ?rateThreshold,
+        if (images.isNotEmpty) 'images': images,
+        'parkingstarttime': (startTime ?? DateTime.now()).toIso8601String(),
+        'parkingendtime': ?(endTime?.toIso8601String()),
+        'currentfees': ?currentFees,
+      })
+      .select()
+      .single();
+  return ParkingSession.fromMap(result);
+}
 
   Future<ParkingSession> fetchSession(String sessionId) async {
     final response = await _supabase

@@ -366,6 +366,22 @@ class MapTabController extends ChangeNotifier {
     return nearest!;
   }
 
+  Carpark? getSelectedOrNearestCarpark() {
+    if (_selectedCarparkNo != null) {
+      try {
+        return _allCarparks.firstWhere(
+          (carpark) => carpark.carParkNo == _selectedCarparkNo,
+        );
+      } on StateError { /* fall through */ }
+    }
+
+    if (_currentPosition != null) {
+      return getNearestCarpark(LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+    }
+
+    return null;
+  }
+
   // ── Disposal ──────────────────────────────────────────────────────────────
 
   @override

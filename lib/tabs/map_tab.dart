@@ -202,7 +202,7 @@ class _MapTabState extends State<MapTab> {
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => StartParkingSessionScreen(),
+                builder: (context) => StartParkingSessionScreen(initialCarpark: _controller.getSelectedOrNearestCarpark()),
               ),
             ),
             label: const Text('Park Now'),
