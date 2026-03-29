@@ -1,6 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:park_buddy/services/user_service.dart';
+import '../models/parking_session.dart';
 
 class ParkingSessionService {
   final _supabase = Supabase.instance.client;
@@ -18,71 +17,91 @@ class ParkingSessionService {
     return ParkingSession.fromMap(result);
   }
 
-  // TODO: ideally fetchSessions from utils/parking_service should be migrated here
-  // TODO: add updateParkingSession (which fields may be updated??)
-}
+  Future<ParkingSession> fetchSession(String sessionId) async {
+    final response = await _supabase
+        .from('parkingsession')
+        .select()
+        .eq('sessionid', sessionId)
+        .maybeSingle();
 
-/// Interface class to avoid interacting with database table directly
-class ParkingSession {
-  final String? sessionId;
-  final String driverId;
-  final String carPlate;
-  final LatLng location;
-  final String? sessionName;
-  final DateTime parkingStartTime;
-  final DateTime? parkingEndTime;
-  final double? currentFees;
-  final List<String> images;
+    if (response == null) {
+      throw Exception('Session not found: $sessionId');
+    }
+    return ParkingSession.fromMap(response);
+  }
 
-  ParkingSession({
-    this.sessionId,
-    String? driverId,
-    required this.carPlate,
-    required this.location,
-    this.sessionName,
-    DateTime? parkingStartTime,
-    this.parkingEndTime,
-    this.currentFees,
-    this.images = const [],
-  }) : driverId = driverId ?? UserService().userId,
-       parkingStartTime = parkingStartTime ?? DateTime.now();
+  Future<String?> fetchDriverName(String driverId) async {
+    final response = await _supabase
+        .from('users')
+        .select('username')
+        .eq('userid', driverId)
+        .maybeSingle();
+    return response?['username'] as String?;
+  }
 
-  /// Convert database row to ParkingSession object.
-  factory ParkingSession.fromMap(Map<String, dynamic> map) {
-    final parts = (map['location'] as String)
-        .replaceAll(RegExp(r'[()]'), '')
-        .split(',');
-    final location = LatLng(double.parse(parts[1]), double.parse(parts[0]));
+  Future<String?> fetchCarName(String carPlate) async {
+    final response = await _supabase
+        .from('cars')
+        .select('carname')
+        .eq('carplate', carPlate)
+        .maybeSingle();
+    return response?['carname'] as String?;
+  }
 
-    return ParkingSession(
-      sessionId: map['sessionid'] as String,
-      driverId: map['driverid'] as String,
-      carPlate: map['carplate'] as String,
-      location: location,
-      sessionName: map['sessionname'] as String?,
-      parkingStartTime: DateTime.parse(map['parkingstarttime']),
-      parkingEndTime: map['parkingendtime'] != null
-          ? DateTime.parse(map['parkingendtime'])
-          : null,
-      currentFees: map['currentfees'] != null
-          ? (map['currentfees'] as num).toDouble()
-          : null,
-      images: List<String>.from(map['images'] as List<String>? ?? const <String>[]),
+  // Returns null if location has no matching carpark or fee row
+  Future<({double hourlyFee, int gracePeriod})?> fetchFeeDetails(
+      String location) async {
+    final carparkResponse = await _supabase
+        .from('carparks')
+        .select('feeid')
+        .eq('location', location)
+        .maybeSingle();
+
+    if (carparkResponse == null) return null;
+    final feeId = carparkResponse['feeid'];
+    if (feeId == null) return null;
+
+    final feeResponse = await _supabase
+        .from('parkingfee')
+        .select('hourlyfee, graceperiod')
+        .eq('feeid', feeId)
+        .maybeSingle();
+
+    if (feeResponse == null) return null;
+    return (
+      hourlyFee: (feeResponse['hourlyfee'] as num).toDouble(),
+      gracePeriod: feeResponse['graceperiod'] as int,
     );
   }
 
-  /// Convert ParkingSession object to database row.
-  Map<String, dynamic> toMap() {
-    return {
-      if (sessionId != null) 'sessionid': sessionId,
-      'driverid': driverId,
-      'carplate': carPlate,
-      'location': '(${location.longitude},${location.latitude})',
+  Future<void> endParking(
+      String sessionId, DateTime endTime, double fees) async {
+    await _supabase.from('parkingsession').update({
+      'parkingendtime': endTime.toUtc().toIso8601String(),
+      'currentfees': fees,
+    }).eq('sessionid', sessionId);
+  }
+
+  // DB operation so it lives here, not in storage service
+  Future<void> updateSessionImages(
+      String sessionId, List<String> imageUrls) async {
+    await _supabase.from('parkingsession').update({
+      'images': imageUrls,
+    }).eq('sessionid', sessionId);
+  }
+
+  Future<void> updateSessionDetails({
+    required String sessionId,
+    required String? sessionName,
+    required String? sessionDescription,
+    required double? rateThreshold,
+    required String? location,
+  }) async {
+    await _supabase.from('parkingsession').update({
       'sessionname': sessionName,
-      'parkingstarttime': parkingStartTime.toIso8601String(),
-      'parkingendtime': parkingEndTime?.toIso8601String(),
-      'currentfees': currentFees,
-      if (images.isNotEmpty) 'images': images,
-    };
+      'sessiondescription': sessionDescription,
+      'ratethreshold': rateThreshold,
+      'location': location,
+    }).eq('sessionid', sessionId);
   }
 }

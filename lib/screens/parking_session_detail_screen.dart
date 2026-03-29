@@ -1,70 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../controllers/parking_session_controller.dart';
+import 'widgets/session_summary_card.dart';
+import 'widgets/session_edit_section.dart';
+import 'widgets/photos_section.dart';
+import 'widgets/session_bottom_bar.dart';
 
 class ParkingSessionDetailScreen extends StatelessWidget {
   final Map<String, dynamic> session;
-
-  ParkingSessionDetailScreen({required this.session});
+  const ParkingSessionDetailScreen({required this.session});
 
   @override
   Widget build(BuildContext context) {
-    bool isOngoing = session['parkingendtime'] == null;
+    return ChangeNotifierProvider(
+      create: (_) => ParkingSessionController(
+        initialSession: session,
+      )..init(),
+      child: const _ParkingSessionDetailView(),
+    );
+  }
+}
+
+class _ParkingSessionDetailView extends StatelessWidget {
+  const _ParkingSessionDetailView();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.watch<ParkingSessionController>();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Parking Session',
+        title: const Text('Parking Session',
             style: TextStyle(color: Colors.white)),
-        backgroundColor: Color(0xFF6200EA),
-        iconTheme: IconThemeData(color: Colors.white),
+        backgroundColor: const Color(0xFF6200EA),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            detailRow('Session Name', session['sessionname'] ?? 'Unnamed'),
-            detailRow('Location', session['location'] ?? '-'),
-            detailRow('Start Time', session['parkingstarttime']?.toString() ?? '-'),
-            detailRow('End Time', isOngoing ? 'Ongoing' : session['parkingendtime']?.toString() ?? '-'),
-            detailRow('Fees', '\$${session['currentfees'] ?? 0}'),
-            detailRow('Car Plate', session['carplate'] ?? '-'),
-            if (isOngoing)
-              Padding(
-                padding: EdgeInsets.only(top: 32),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF6200EA),
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    onPressed: () {},
-                    child: Text('END PARKING',
-                        style: TextStyle(color: Colors.white, fontSize: 16)),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
+      body: c.isLoadingSession
+          ? const Center(child: CircularProgressIndicator())
+          : c.errorMessage != null
+              ? Center(child: Text(c.errorMessage!))
+              : Column(
+                  children: [
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          // Non-editable summary card at the top
+                          SessionSummaryCard(
+                            isOngoing: c.isOngoing,
+                            accumulatedFees: c.accumulatedFees,
+                            startTime: c.session?.startTime,
+                            endTime: c.session?.endTime,
+                            driverName: c.driverName,
+                            carName: c.carName,
+                            carPlate: c.session?.carPlate,
+                          ),
 
-  Widget detailRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: Colors.grey)),
-          SizedBox(height: 4),
-          Text(value, style: TextStyle(fontSize: 16)),
-          Divider(),
-        ],
-      ),
+                          // Editable fields in ListTile style
+                          const SessionEditSection(),
+
+                          // Photos section
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16),
+                            child: const PhotosSection(),
+                            ),                        ],
+                      ),
+                    ),
+
+                    // Pinned bottom bar for ongoing sessions
+                    if (c.isOngoing)
+                      const SessionBottomBar(),
+                  ],
+                ),
     );
   }
 }
