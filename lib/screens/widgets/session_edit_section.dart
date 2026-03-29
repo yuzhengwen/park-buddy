@@ -22,8 +22,6 @@ class _SessionEditSectionState extends State<SessionEditSection> {
   String? _pendingLocation;
   LatLng? _pendingLatLng; 
 
-  final List<CarparkLocation> _carparks = [];
-
   @override
   void dispose() {
     _nameController.dispose();
@@ -74,7 +72,7 @@ class _SessionEditSectionState extends State<SessionEditSection> {
 
 Future<void> _pickLocation(
     BuildContext context, ParkingSessionController c) async {
-  final CarparkLocation? result = await Navigator.push(
+  final Carpark? result = await Navigator.push(
     context,
     MaterialPageRoute(
       builder: (_) => CarparkPickerScreen(
@@ -86,8 +84,8 @@ Future<void> _pickLocation(
     setState(() {
       // Store as "x_coord,y_coord" SVY21 to match DB format
       // You'll need to expose x/y from CarparkLocation or Carpark
-      _pendingLocation = result.name; // UPDATE once carpark code is available
-      _pendingLatLng = result.coords;
+      _pendingLocation = result.address; // UPDATE once carpark code is available
+      _pendingLatLng = result.position;
     });
   }
 }
