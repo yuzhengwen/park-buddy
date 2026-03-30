@@ -25,6 +25,7 @@ class _MapTabState extends State<MapTab> {
   final _mapController = MapController();
   final _searchController = TextEditingController();
   final _radiusController = TextEditingController(text: '1');
+  final _bottomSheetController = DraggableScrollableController();
   late final MapTabController _controller;
 
   bool _hasCenteredOnUser = false;
@@ -54,6 +55,7 @@ class _MapTabState extends State<MapTab> {
     _controller.dispose();
     _searchController.dispose();
     _radiusController.dispose();
+    _bottomSheetController.dispose();
     super.dispose();
   }
 
@@ -184,59 +186,67 @@ class _MapTabState extends State<MapTab> {
           ),
         ),
 
-        // ── Recenter FAB ──────────────────────────────────────────────────────
-        Positioned(
-          right: 16,
-          bottom: 220,
-          child: FloatingActionButton.small(
-            heroTag: 'recenter-map',
-            onPressed: pos == null ? null : _recenterOnUser,
-            child: const Icon(Icons.my_location),
-          ),
-        ),
+        // ── FABs ──────────────────────────────────────────────────────────────
+        AnimatedBuilder(
+          animation: _bottomSheetController,
+          builder: (context, child) {
+            final offset = _bottomSheetController.isAttached
+                ? _bottomSheetController.pixels + 16.0
+                : 16.0;
+            final visible =
+                !_bottomSheetController.isAttached ||
+                _bottomSheetController.size <= 0.5;
 
-        // ── Park Now FAB ──────────────────────────────────────────────────────
-        Positioned(
-          right: 16,
-          bottom: 160,
-          child: FloatingActionButton.extended(
-            heroTag: 'parkNow',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => StartParkingSessionScreen(
-                  initialCarpark: _controller.getSelectedOrNearestCarpark(),
+            return Positioned(
+              right: 16,
+              bottom: offset,
+              child: AnimatedScale(
+                scale: visible ? 1.0 : 0.0,
+                duration: Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                child: AnimatedOpacity(
+                  opacity: visible ? 1.0 : 0.0,
+                  duration: Duration(milliseconds: 200),
+                  child: child!
                 ),
               ),
-            ),
-            label: const Text('Park Now'),
-            icon: const Icon(Icons.local_parking),
-          ),
-        ),
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            spacing: 8,
+            children: [
+              // Re-centre FAB
+              FloatingActionButton.small(
+                heroTag: 'recenter-map',
+                onPressed: pos == null ? null : _recenterOnUser,
+                child: const Icon(Icons.my_location),
+              ),
 
-        CarparkPickerBottomSheet(
-          carparks: _controller.visibleCarparks,
-          onItemSelect: _focusCarpark,
+              // Park Now FAB
+              FloatingActionButton.extended(
+                label: const Text('Park Now'),
+                icon: const Icon(Icons.local_parking),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => StartParkingSessionScreen(
+                      initialCarpark: _controller.getSelectedOrNearestCarpark(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
 
         // ── Bottom carpark panel ──────────────────────────────────────────────
-        // Positioned(
-        //   left: 0,
-        //   right: 0,
-        //   bottom: 0,
-        //   child: CarparkListPanel(
-        //     visibleCarparks: _controller.visibleCarparks,
-        //     isLoadingCarparks: _controller.isLoadingCarparks,
-        //     isListCollapsed: _controller.isListCollapsed,
-        //     loadError: _controller.loadError,
-        //     listOrigin: listOrigin,
-        //     selectedCarparkNo: _controller.selectedCarparkNo,
-        //     locationStatusText: _panelLocationStatus(),
-        //     onToggleCollapse: _controller.toggleListCollapsed,
-        //     onCarparkTap: _focusCarpark,
-        //     onRetry: () => unawaited(_controller.loadCarparkData()),
-        //   ),
-        // ),
+        CarparkPickerBottomSheet(
+          controller: _bottomSheetController,
+          carparks: _controller.visibleCarparks,
+          onItemSelect: _focusCarpark,
+          userLocation: _controller.currentPosition != null ? currentLatLng : null,
+        ),
       ],
     );
   }

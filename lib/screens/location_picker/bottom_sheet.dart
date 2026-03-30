@@ -1,33 +1,37 @@
 import 'dart:core';
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:park_buddy/models/carpark.dart';
+import 'package:park_buddy/utils/math_utils.dart';
 
 // Bottom sheet holding the list of carpark locations
 class CarparkPickerBottomSheet extends StatefulWidget {
-  final List<Carpark> _carparks;
-  final void Function(Carpark carpark)? _onItemSelect;
-  final DraggableScrollableController? controller;
+  static const initialSheetSize = 0.25;
+  final List<Carpark> carparks;
+  final void Function(Carpark carpark)? onItemSelect;
+  final DraggableScrollableController controller;
+  final LatLng? userLocation;
 
   const CarparkPickerBottomSheet({
     super.key,
-    required List<Carpark> carparks,
-    void Function(Carpark carpark)? onItemSelect,
-    this.controller,
-  }) : _carparks = carparks,
-       _onItemSelect = onItemSelect;
+    required this.carparks,
+    this.onItemSelect,
+    required this.controller,
+    this.userLocation,
+  });
 
   @override
   State<CarparkPickerBottomSheet> createState() => _CarparkPickerBottomSheetState();
 }
 
 class _CarparkPickerBottomSheetState extends State<CarparkPickerBottomSheet> {
-  final _sheetSize = ValueNotifier(0.25);
+  final _sheetSize = ValueNotifier(CarparkPickerBottomSheet.initialSheetSize);
 
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
-      initialChildSize: 0.25,
-      minChildSize: 0.25,
+      initialChildSize: CarparkPickerBottomSheet.initialSheetSize,
+      minChildSize: 0.1,
       maxChildSize: 1.0,
       snap: true,
       snapSizes: const [0.25, 0.5, 1.0],
@@ -45,7 +49,7 @@ class _CarparkPickerBottomSheetState extends State<CarparkPickerBottomSheet> {
               final radius = 28.0 * (1 - t);
 
               return AnimatedContainer(
-                duration: const Duration(milliseconds: 50),
+                duration: const Duration(milliseconds: 0),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.vertical(
@@ -61,42 +65,20 @@ class _CarparkPickerBottomSheetState extends State<CarparkPickerBottomSheet> {
                 child: child,
               );
             },
-            child: CustomScrollView(
-              controller: scrollController,
-              slivers: [
-                if (widget._carparks.isNotEmpty)
-                  SliverList.builder(
-                    itemCount: widget._carparks.length,
-                    itemBuilder: (context, index) {
-                      final carpark = widget._carparks[index];
-                      return ListTile(
-                        title: Text(carpark.address),
-                        subtitle: Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(text: 'Car park: ${carpark.carParkNo}\n'),
-                              // TODO: carpark availability
-                              TextSpan(text: '${carpark.carParkType} • ${carpark.shortTermParking}'),
-                            ],
-                          ),
-                        ),
-                        onTap: () => widget._onItemSelect?.call(widget._carparks[index]),
-                      );
-                    },
-                  )
-                else
-                  SliverFillRemaining(
-                    child: Center(
-                      child: Text(
-                        'No carparks found',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            )
+            child: _SheetContent(
+              scrollController: scrollController,
+              carparks: widget.carparks,
+              userLocation: widget.userLocation,
+              onItemSelect: (carpark) async {
+                widget.onItemSelect?.call(carpark);
+                scrollController.jumpTo(0);
+                await widget.controller.animateTo(
+                  0.25,
+                  duration: Duration(milliseconds: 400),
+                  curve: Curves.easeInOut,
+                );
+              },
+            ),
           ),
         );
       },
@@ -104,34 +86,155 @@ class _CarparkPickerBottomSheetState extends State<CarparkPickerBottomSheet> {
   }
 }
 
-// Bottom sheet drag handle
-class DragHandleDelegate extends SliverPersistentHeaderDelegate {
-  final double height = 36;
+class _SheetContent extends StatelessWidget {
+  final ScrollController scrollController;
+  final List<Carpark> carparks;
+  final LatLng? userLocation;
+  final void Function(Carpark carpark)? onItemSelect;
+
+  const _SheetContent({
+    required this.scrollController,
+    required this.carparks,
+    this.userLocation,
+    this.onItemSelect,
+  });
 
   @override
-  double get maxExtent => height;
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      controller: scrollController,
+      slivers: [
+        SliverToBoxAdapter(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const _DragHandle(),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'Nearest HDB Car Parks',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (carparks.isNotEmpty)
+          SliverList.builder(
+            itemCount: carparks.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: _CarparkCard(
+                  onItemSelect: onItemSelect,
+                  carpark: carparks[index],
+                  userLocation: userLocation,
+                ),
+              );
+            },
+          )
+        else
+          SliverFillRemaining(
+            child: Center(
+              child: Text(
+                'No carparks found',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _CarparkCard extends StatelessWidget {
+  final void Function(Carpark carpark)? onItemSelect;
+  final Carpark carpark;
+  final LatLng? userLocation;
+
+  const _CarparkCard({
+    required this.onItemSelect,
+    required this.carpark,
+    this.userLocation,
+  });
 
   @override
-  double get minExtent => height;
+  Widget build(BuildContext context) {
+    final carparkNo = 'Car park: ${carpark.carParkNo}';
+    final distanceKm = userLocation != null
+        ? ' • ${MathUtils.distanceKm(userLocation!, carpark.position).toStringAsFixed(2)} km'
+        : '';
+    final lotsLabel = carpark.availability != null && carpark.availability!.lotsAvailable == 1
+        ? 'lot'
+        : 'lots';
+    final numLots = carpark.availability != null
+        ? '${carpark.availability!.lotsAvailable}\n$lotsLabel'
+        : 'n/a';
 
-  @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) => false;
-
-  @override
-  Widget build(context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
+    return Card.outlined(
+      clipBehavior: Clip.hardEdge,
+      child: InkWell(
+        onTap: () {
+          debugPrint('card tapped');
+          onItemSelect?.call(carpark);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            spacing: 16,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      carpark.address,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text('$carparkNo $distanceKm'),
+                    Text('${carpark.carParkType} • ${carpark.shortTermParking}',
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                width: 50,
+                child: Text(
+                  numLots,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      alignment: Alignment(0, 0),
+    );
+  }
+}
+
+class _DragHandle extends StatelessWidget {
+  const _DragHandle();
+
+  @override
+  Widget build(context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Container(
-        width: 32,
-        height: 4,
-        margin: EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.outline,
-          borderRadius: BorderRadius.circular(2),
+        alignment: Alignment.center,
+        child: Container(
+          width: 32,
+          height: 4,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            borderRadius: BorderRadius.circular(2),
+          ),
         ),
       ),
     );
