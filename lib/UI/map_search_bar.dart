@@ -6,10 +6,7 @@ class MapSearchBar extends StatelessWidget {
     required this.searchController,
     required this.radiusController,
     required this.isSearchingLocation,
-    required this.isTracking,
     required this.searchText,
-    required this.statusMessage,
-    required this.searchCenterLabel,
     required this.onApply,
     required this.onOpenSettings,
   });
@@ -17,10 +14,7 @@ class MapSearchBar extends StatelessWidget {
   final TextEditingController searchController;
   final TextEditingController radiusController;
   final bool isSearchingLocation;
-  final bool isTracking;
   final String searchText;
-  final String statusMessage;
-  final String? searchCenterLabel;
   final VoidCallback onApply;
   final VoidCallback onOpenSettings;
 
@@ -55,37 +49,9 @@ class MapSearchBar extends StatelessWidget {
                     onSubmitted: (_) => onApply(),
                   ),
                 ),
-
                 const SizedBox(width: 10),
                 SizedBox(
-                  height: 56,
-                  child: FilledButton(
-                    onPressed: isSearchingLocation ? null : onApply,
-                    child: Text(isSearchingLocation ? '...' : 'Go'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Icon(
-                  isTracking ? Icons.gps_fixed : Icons.location_off,
-                  color: isTracking ? Colors.green : Colors.orange,
-                  size: 18,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    searchCenterLabel == null
-                        ? statusMessage
-                        : 'Search area: $searchCenterLabel',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                SizedBox(
-                  width: 75,
+                  width: 76,
                   child: TextField(
                     controller: radiusController,
                     keyboardType: const TextInputType.numberWithOptions(
@@ -100,6 +66,14 @@ class MapSearchBar extends StatelessWidget {
                       ),
                     ),
                     onSubmitted: (_) => onApply(),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  height: 56,
+                  child: FilledButton(
+                    onPressed: isSearchingLocation ? null : onApply,
+                    child: Text(isSearchingLocation ? '...' : 'Go'),
                   ),
                 ),
                 IconButton(

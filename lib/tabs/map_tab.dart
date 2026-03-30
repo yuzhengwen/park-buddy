@@ -89,6 +89,13 @@ class _MapTabState extends State<MapTab> {
     }
   }
 
+  String? _panelLocationStatus() {
+    if (_controller.isTracking) {
+      return 'Updated just now';
+    }
+    return null;
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
@@ -99,10 +106,7 @@ class _MapTabState extends State<MapTab> {
         ? MapTabController.defaultCenter
         : LatLng(pos.latitude, pos.longitude);
     final listOrigin = _controller.searchCenter ?? currentLatLng;
-    final hasActiveSearch = _searchController.text.trim().isNotEmpty;
-    final markerCarparks = hasActiveSearch
-        ? _controller.visibleCarparks
-        : _controller.allCarparks;
+    final markerCarparks = _controller.visibleCarparks;
 
     return Stack(
       children: [
@@ -172,10 +176,7 @@ class _MapTabState extends State<MapTab> {
               searchController: _searchController,
               radiusController: _radiusController,
               isSearchingLocation: _controller.isSearchingLocation,
-              isTracking: _controller.isTracking,
               searchText: _controller.searchText,
-              statusMessage: _controller.statusMessage,
-              searchCenterLabel: _controller.searchCenterLabel,
               onApply: _applySearchAndRadius,
               onOpenSettings: _controller.openAppSettings,
             ),
@@ -202,7 +203,9 @@ class _MapTabState extends State<MapTab> {
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => StartParkingSessionScreen(initialCarpark: _controller.getSelectedOrNearestCarpark()),
+                builder: (context) => StartParkingSessionScreen(
+                  initialCarpark: _controller.getSelectedOrNearestCarpark(),
+                ),
               ),
             ),
             label: const Text('Park Now'),
@@ -222,6 +225,7 @@ class _MapTabState extends State<MapTab> {
             loadError: _controller.loadError,
             listOrigin: listOrigin,
             selectedCarparkNo: _controller.selectedCarparkNo,
+            locationStatusText: _panelLocationStatus(),
             onToggleCollapse: _controller.toggleListCollapsed,
             onCarparkTap: _focusCarpark,
             onRetry: () => unawaited(_controller.loadCarparkData()),

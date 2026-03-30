@@ -12,6 +12,7 @@ class CarparkListPanel extends StatelessWidget {
     required this.loadError,
     required this.listOrigin,
     required this.selectedCarparkNo,
+    required this.locationStatusText,
     required this.onToggleCollapse,
     required this.onCarparkTap,
     required this.onRetry,
@@ -23,6 +24,7 @@ class CarparkListPanel extends StatelessWidget {
   final String? loadError;
   final LatLng listOrigin;
   final String? selectedCarparkNo;
+  final String? locationStatusText;
   final VoidCallback onToggleCollapse;
   final void Function(Carpark) onCarparkTap;
   final VoidCallback onRetry;
@@ -62,6 +64,7 @@ class CarparkListPanel extends StatelessWidget {
               _PanelHandle(
                 carparkCount: visibleCarparks.length,
                 isCollapsed: isListCollapsed,
+                locationStatusText: locationStatusText,
                 onToggle: onToggleCollapse,
               ),
               if (!isListCollapsed)
@@ -90,11 +93,13 @@ class _PanelHandle extends StatelessWidget {
   const _PanelHandle({
     required this.carparkCount,
     required this.isCollapsed,
+    required this.locationStatusText,
     required this.onToggle,
   });
 
   final int carparkCount;
   final bool isCollapsed;
+  final String? locationStatusText;
   final VoidCallback onToggle;
 
   @override
@@ -117,9 +122,22 @@ class _PanelHandle extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(
-                    'Nearest HDB Car Parks ($carparkCount)',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Nearest HDB Car Parks ($carparkCount)',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      if (locationStatusText != null) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          locationStatusText!,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 TextButton.icon(
@@ -199,7 +217,7 @@ class _CarparkListBody extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       itemCount: visibleCarparks.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, index) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final carpark = visibleCarparks[index];
         final km = MathUtils.distanceKm(listOrigin, carpark.position);
