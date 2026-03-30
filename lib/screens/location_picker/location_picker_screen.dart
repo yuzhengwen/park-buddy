@@ -80,6 +80,10 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
       },
     );
 
+    _sheetController.addListener(() {
+      _sheetSize.value = _sheetController.size;
+    });
+
     _goToUser();
   }
 
@@ -122,7 +126,6 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
           CarparkPickerBottomSheet(
             carparks: _boundedCarparks,
             onItemSelect: (carpark) => _onConfirm(context, carpark),
-            sheetSize: _sheetSize,
             controller: _sheetController,
           ),
         ],

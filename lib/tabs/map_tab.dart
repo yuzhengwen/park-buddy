@@ -12,6 +12,7 @@ import '../screens/start_parking_session_screen.dart';
 import '../UI/carpark_list_panel.dart';
 import '../UI/map_search_bar.dart';
 import '../controllers/map_tab_controller.dart';
+import '../screens/location_picker/bottom_sheet.dart';
 
 class MapTab extends StatefulWidget {
   const MapTab({super.key});
@@ -213,24 +214,29 @@ class _MapTabState extends State<MapTab> {
           ),
         ),
 
-        // ── Bottom carpark panel ──────────────────────────────────────────────
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: CarparkListPanel(
-            visibleCarparks: _controller.visibleCarparks,
-            isLoadingCarparks: _controller.isLoadingCarparks,
-            isListCollapsed: _controller.isListCollapsed,
-            loadError: _controller.loadError,
-            listOrigin: listOrigin,
-            selectedCarparkNo: _controller.selectedCarparkNo,
-            locationStatusText: _panelLocationStatus(),
-            onToggleCollapse: _controller.toggleListCollapsed,
-            onCarparkTap: _focusCarpark,
-            onRetry: () => unawaited(_controller.loadCarparkData()),
-          ),
+        CarparkPickerBottomSheet(
+          carparks: _controller.visibleCarparks,
+          onItemSelect: _focusCarpark,
         ),
+
+        // ── Bottom carpark panel ──────────────────────────────────────────────
+        // Positioned(
+        //   left: 0,
+        //   right: 0,
+        //   bottom: 0,
+        //   child: CarparkListPanel(
+        //     visibleCarparks: _controller.visibleCarparks,
+        //     isLoadingCarparks: _controller.isLoadingCarparks,
+        //     isListCollapsed: _controller.isListCollapsed,
+        //     loadError: _controller.loadError,
+        //     listOrigin: listOrigin,
+        //     selectedCarparkNo: _controller.selectedCarparkNo,
+        //     locationStatusText: _panelLocationStatus(),
+        //     onToggleCollapse: _controller.toggleListCollapsed,
+        //     onCarparkTap: _focusCarpark,
+        //     onRetry: () => unawaited(_controller.loadCarparkData()),
+        //   ),
+        // ),
       ],
     );
   }

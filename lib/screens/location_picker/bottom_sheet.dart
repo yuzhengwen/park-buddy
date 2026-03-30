@@ -3,22 +3,25 @@ import 'package:flutter/material.dart';
 import 'package:park_buddy/models/carpark.dart';
 
 // Bottom sheet holding the list of carpark locations
-class CarparkPickerBottomSheet extends StatelessWidget {
+class CarparkPickerBottomSheet extends StatefulWidget {
   final List<Carpark> _carparks;
   final void Function(Carpark carpark)? _onItemSelect;
-  final ValueNotifier<double> _sheetSize;
-  final DraggableScrollableController _controller;
+  final DraggableScrollableController? controller;
 
   const CarparkPickerBottomSheet({
     super.key,
     required List<Carpark> carparks,
     void Function(Carpark carpark)? onItemSelect,
-    required ValueNotifier<double> sheetSize,
-    required DraggableScrollableController controller,
+    this.controller,
   }) : _carparks = carparks,
-       _onItemSelect = onItemSelect,
-       _sheetSize = sheetSize,
-       _controller = controller;
+       _onItemSelect = onItemSelect;
+
+  @override
+  State<CarparkPickerBottomSheet> createState() => _CarparkPickerBottomSheetState();
+}
+
+class _CarparkPickerBottomSheetState extends State<CarparkPickerBottomSheet> {
+  final _sheetSize = ValueNotifier(0.25);
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +31,7 @@ class CarparkPickerBottomSheet extends StatelessWidget {
       maxChildSize: 1.0,
       snap: true,
       snapSizes: const [0.25, 0.5, 1.0],
-      controller: _controller,
+      controller: widget.controller,
       builder: (context, scrollController) {
         return NotificationListener<DraggableScrollableNotification>(
           onNotification: (notification) {
@@ -61,11 +64,11 @@ class CarparkPickerBottomSheet extends StatelessWidget {
             child: CustomScrollView(
               controller: scrollController,
               slivers: [
-                if (_carparks.isNotEmpty)
+                if (widget._carparks.isNotEmpty)
                   SliverList.builder(
-                    itemCount: _carparks.length,
+                    itemCount: widget._carparks.length,
                     itemBuilder: (context, index) {
-                      final carpark = _carparks[index];
+                      final carpark = widget._carparks[index];
                       return ListTile(
                         title: Text(carpark.address),
                         subtitle: Text.rich(
@@ -77,7 +80,7 @@ class CarparkPickerBottomSheet extends StatelessWidget {
                             ],
                           ),
                         ),
-                        onTap: () => _onItemSelect?.call(_carparks[index]),
+                        onTap: () => widget._onItemSelect?.call(widget._carparks[index]),
                       );
                     },
                   )
