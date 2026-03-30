@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:park_buddy/UI/family_header.dart';
+import 'package:park_buddy/UI/family_members_list.dart';
+import 'package:park_buddy/UI/generic_dialog_utils.dart';
 import '../utils/family_service.dart';
 
 class FamilyScreen extends StatefulWidget {
@@ -19,6 +22,32 @@ class _FamilyScreenState extends State<FamilyScreen> {
   void initState() {
     super.initState();
     loadFamily();
+  }
+
+  void _showEditNameDialog() async {
+    final newName = await GenericDialogUtils.prompt(
+      context: context,
+      title: 'Edit Family Name',
+      initialValue: familyName,
+      labelText: 'Family Name',
+      confirmLabel: 'Save',
+      maxLength: 50,
+      validator: (v) => v.isEmpty ? 'Name cannot be empty' : null,
+      sanitize: (v) =>
+          v.replaceAll(RegExp(r'\s+'), ' '), // collapse double spaces
+    );
+    if (newName == null || !mounted) return;
+    try {
+      await _familyService.updateFamilyName(joinCode, newName);
+      setState(() => familyName = newName);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Family name updated')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    }
   }
 
   Future<void> loadFamily() async {
@@ -43,7 +72,42 @@ class _FamilyScreenState extends State<FamilyScreen> {
     });
   }
 
+  Future<void> _handleKick(Map<String, dynamic> member) async {
+    final username = member['username'];
+    if (!await GenericDialogUtils.confirm(
+      context: context,
+      title: 'Kick Member?',
+      message: 'Remove ${member['username']} from the family?',
+      confirmLabel: 'Kick',
+      destructive: true,
+    ))
+      return;
+    try {
+      await _familyService.kickMember(joinCode, member['userid']);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$username has been removed')));
+        await loadFamily();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   Future<void> _handleLeave() async {
+    if (!await GenericDialogUtils.confirm(
+      context: context,
+      title: 'Leave Family?',
+      message: 'Are you sure you want to leave the family?',
+      confirmLabel: 'Leave',
+      destructive: true,
+    ))
+      return;
     setState(() => _isDeleting = true);
     try {
       await _familyService.leaveFamily(joinCode);
@@ -107,8 +171,15 @@ class _FamilyScreenState extends State<FamilyScreen> {
 
   bool _isDeleting = false;
   Future<void> _handleDelete() async {
-    bool confirm = await _showDeleteDialog();
-    if (!confirm) return;
+    if (!await GenericDialogUtils.confirm(
+      context: context,
+      title: 'Delete Family?',
+      message:
+          'This will remove all members and cars. This action cannot be undone.',
+      confirmLabel: 'Delete',
+      destructive: true,
+    ))
+      return;
 
     setState(() => _isDeleting = true);
 
@@ -135,32 +206,6 @@ class _FamilyScreenState extends State<FamilyScreen> {
     }
   }
 
-  Future<bool> _showDeleteDialog() async {
-    return await showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Delete Family?'),
-            content: const Text(
-              'This will remove all members and cars. This action cannot be undone.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text(
-                  'Delete',
-                  style: TextStyle(color: Colors.red),
-                ),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -169,7 +214,9 @@ class _FamilyScreenState extends State<FamilyScreen> {
     }
     return Scaffold(
       appBar: AppBar(title: const Text('Family Management')),
-      body: isInFamily ? _buildFamilyView() : _buildNoFamilyView(),
+      body: SafeArea(
+        child: isInFamily ? _buildFamilyView() : _buildNoFamilyView(),
+      ),
     );
   }
 
@@ -178,38 +225,12 @@ class _FamilyScreenState extends State<FamilyScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 🔹 Header section
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          color: Colors.grey[200],
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                familyName,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Text("Join Code: "),
-                  SelectableText(
-                    joinCode,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        FamilyHeader(
+          familyName: familyName,
+          joinCode: joinCode,
+          isOwner: isOwner,
+          onEditName: _showEditNameDialog,
         ),
-
         // 🔹 Members title
         const Padding(
           padding: EdgeInsets.all(16),
@@ -221,40 +242,14 @@ class _FamilyScreenState extends State<FamilyScreen> {
 
         // 🔹 Member list
         Expanded(
-          child: ListView.builder(
-            itemCount: members.length,
-            itemBuilder: (context, index) {
-              final member = members[index];
-              final isOwner = member['userid'] == ownerId;
-              debugPrint("Member: ${member['username']}, ownerId: $ownerId, userId: ${member['userid']}, isOwner: $isOwner");
-              return ListTile(
-                leading: const Icon(Icons.person),
-                title: Row(
-                  children: [
-                    Text(member['username']),
-                    if (isOwner)
-                      Container(
-                        margin: const EdgeInsets.only(left: 8),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.amber,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'OWNER',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            },
+          child: RefreshIndicator(
+            onRefresh: loadFamily,
+            child: FamilyMembersList(
+              members: members,
+              ownerId: ownerId,
+              isOwner: isOwner,
+              onKick: _handleKick,
+            ),
           ),
         ),
         Padding(

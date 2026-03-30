@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:park_buddy/UI/generic_dialog_utils.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart'; // <-- for kIsWeb
 import 'main_screen.dart'; // <-- import the main screen
@@ -56,6 +57,14 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  Future<void> signInWithMagicLink(String email) async {
+    await supabase.auth.signInWithOtp(
+      email: email,
+      emailRedirectTo:
+          'com.parkingbuddy.app://auth-callback', // Must match dashboard
+    );
+  }
+
   Future<void> signInWithGithub() async {
     await supabase.auth.signInWithOAuth(
       OAuthProvider.github,
@@ -107,6 +116,26 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: signInWithGithub,
               child: Text('Sign in with GitHub'),
             ),
+            ElevatedButton(
+              onPressed: () async {
+                final email = await GenericDialogUtils.prompt(
+                  context: context,
+                  title: 'Enter your email',
+                  hintText: 'Email',
+                  validator: (value) {
+                    if (value.isEmpty) return 'Email cannot be empty';
+                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                      return 'Enter a valid email';
+                    }
+                    return null;
+                  },
+                );
+                if (email == null) return; // user cancelled
+                signInWithMagicLink(email);
+              },
+              child: const Text('Sign in with Magic Link'),
+            ),
+
             SizedBox(height: 16),
             ElevatedButton(
               onPressed: _userId != null ? () => signOut(context) : null,
