@@ -11,7 +11,7 @@ class ParkingSessionService {
     String? driverId,
     required String carPlate,
     required LatLng carparkLocation,
-    required String carparkName,
+    String? carparkName,
     String? sessionName,
     String? sessionDescription,
     double? rateThreshold,
@@ -72,8 +72,6 @@ class ParkingSessionService {
     return response?['carname'] as String?;
   }
 
-  // Removed: fetchFeeDetails — no longer using parkingfee table
-
   Future<void> endParking(
       String sessionId, DateTime endTime, double fees) async {
     await _supabase.from('parkingsession').update({
@@ -94,6 +92,7 @@ class ParkingSessionService {
     required String? sessionName,
     required String? sessionDescription,
     required double? rateThreshold,
+    String? carparkName,
     required String? location, // stores "x_coord,y_coord"
   }) async {
     await _supabase.from('parkingsession').update({
@@ -101,6 +100,7 @@ class ParkingSessionService {
       'sessiondescription': sessionDescription,
       'ratethreshold': rateThreshold,
       'location': location,
+      'carparkname': carparkName,
     }).eq('sessionid', sessionId);
   }
 }

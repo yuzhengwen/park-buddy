@@ -20,6 +20,7 @@ class _SessionEditSectionState extends State<SessionEditSection> {
   final _descController = TextEditingController();
   final _rateController = TextEditingController();
   String? _pendingLocation;
+  String? _pendingCarparkName;
   LatLng? _pendingLatLng; 
 
   @override
@@ -58,6 +59,7 @@ class _SessionEditSectionState extends State<SessionEditSection> {
             : _descController.text.trim(),
         rateThreshold: double.tryParse(_rateController.text.trim()),
         location: _pendingLocation,
+        carparkName: _pendingCarparkName,
         carparkPosition: _pendingLatLng,
       );
       setState(() => _editingField = null);
@@ -82,9 +84,9 @@ Future<void> _pickLocation(
   );
   if (result != null) {
     setState(() {
-      // Store as "x_coord,y_coord" SVY21 to match DB format
-      // You'll need to expose x/y from CarparkLocation or Carpark
-      _pendingLocation = result.address; // UPDATE once carpark code is available
+      // Store as "x_coord,y_coord" 
+      _pendingLocation = result.address; 
+      _pendingCarparkName = result.address;
       _pendingLatLng = result.position;
     });
   }
@@ -121,11 +123,11 @@ Future<void> _pickLocation(
           field: 'location',
           icon: Icons.location_on,
           label: 'Location',
-          currentValue: c.session?.location ?? 'Not set',
+          currentValue: c.session?.carparkName ??c.session?.location ?? 'Not set',
           editWidget: ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(
-              _pendingLocation ?? c.session?.location ?? 'Not selected',
+              _pendingCarparkName ?? c.session?.carparkName ?? c.session?.location ?? 'Not selected',
               style: const TextStyle(fontSize: 14),
             ),
             trailing: FilledButton(
