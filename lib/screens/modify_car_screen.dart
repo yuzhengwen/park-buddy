@@ -84,6 +84,9 @@ class _AddCarScreenState extends State<AddCarScreen> {
     bool isEditing = widget.carToEdit != null;
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(isEditing ? "Edit Vehicle" : "Add Vehicle"),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
