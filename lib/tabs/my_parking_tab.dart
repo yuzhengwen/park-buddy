@@ -35,17 +35,25 @@ class _MyParkingTabState extends State<MyParkingTab> {
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
-          : cars.isEmpty
-              ? Center(child: Text('No cars registered yet'))
-              : ListView.builder(
-                  itemCount: cars.length,
-                  itemBuilder: (context, index) {
-                    return CarCard(
-                      car: cars[index],
-                      parkingService: _parkingService,
-                    );
-                  },
-                ),
+          : RefreshIndicator(
+              onRefresh: _loadCars,
+              child: cars.isEmpty
+                  ? ListView(
+                      children: [
+                        SizedBox(height: 300),
+                        Center(child: Text('No cars registered yet')),
+                      ],
+                    )
+                  : ListView.builder(
+                      itemCount: cars.length,
+                      itemBuilder: (context, index) {
+                        return CarCard(
+                          car: cars[index],
+                          parkingService: _parkingService,
+                        );
+                      },
+                    ),
+            ),
     );
   }
 }
