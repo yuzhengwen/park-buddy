@@ -8,6 +8,7 @@ class ParkingSession {
   final String? driverId;
   final String? carPlate;
   final String? location; // stores "x_coord,y_coord" SVY21 string
+  final String? carparkName;
   final LatLng? carparkPosition; // derived from location, not stored in DB
   final DateTime? startTime;
   final DateTime? endTime;
@@ -22,6 +23,7 @@ class ParkingSession {
     this.driverId,
     this.carPlate,
     this.location,
+    this.carparkName,
     this.carparkPosition,
     this.startTime,
     this.endTime,
@@ -63,6 +65,7 @@ class ParkingSession {
       driverId: map['driverid'] as String?,
       carPlate: map['carplate'] as String?,
       location: locationStr,
+      carparkName: map['carparkname'] as String?,
       carparkPosition: position,
       startTime: map['parkingstarttime'] != null
           ? DateTime.tryParse(map['parkingstarttime'].toString())
@@ -84,6 +87,7 @@ class ParkingSession {
     String? driverId,
     String? carPlate,
     String? location,
+    String? carparkName,
     LatLng? carparkPosition,
     DateTime? startTime,
     DateTime? endTime,
@@ -99,6 +103,7 @@ class ParkingSession {
       driverId: driverId ?? this.driverId,
       carPlate: carPlate ?? this.carPlate,
       location: location ?? this.location,
+      carparkName: carparkName ?? this.carparkName,
       carparkPosition: carparkPosition ?? this.carparkPosition,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,

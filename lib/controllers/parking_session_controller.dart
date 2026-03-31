@@ -209,6 +209,7 @@ void _startTimer() {
     required String? sessionDescription,
     required double? rateThreshold,
     required String? location,
+    String? carparkName,
     LatLng? carparkPosition,
   }) async {
     isSavingDetails = true;
@@ -221,12 +222,14 @@ void _startTimer() {
         sessionDescription: sessionDescription,
         rateThreshold: rateThreshold,
         location: location,
+        carparkName: carparkName,
       );
       session = session!.copyWith(
         sessionName: sessionName,
         sessionDescription: sessionDescription,
         rateThreshold: rateThreshold,
         location: location,
+        carparkName: carparkName,
         carparkPosition: carparkPosition,
       );
     } catch (e) {
