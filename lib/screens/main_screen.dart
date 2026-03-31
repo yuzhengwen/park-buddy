@@ -4,6 +4,8 @@ import '../tabs/profile_tab.dart';
 import '../tabs/my_parking_tab.dart';
 
 class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
+
   @override
   _MainScreenState createState() => _MainScreenState();
 }
@@ -12,7 +14,7 @@ class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
   // List of widgets for each tab
-  List<Widget> _widgetOptions = <Widget>[
+  final List<Widget> _widgetOptions = <Widget>[
     MyParkingTab(),
     MapTab(),
     ProfileTab(),
@@ -28,7 +30,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Main Screen'),
+        title: Text('Park Buddy'),
       ),
       body: _widgetOptions[_selectedIndex], // Display selected tab content
       bottomNavigationBar: BottomNavigationBar(

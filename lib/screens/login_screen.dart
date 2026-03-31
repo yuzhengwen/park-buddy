@@ -1,17 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:park_buddy/UI/generic_dialog_utils.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart'; // <-- for kIsWeb
 import 'main_screen.dart'; // <-- import the main screen
 import '../utils/auth.dart';
+import 'dart:async'; // <-- for StreamSubscription
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  late final StreamSubscription<AuthState> _authSubscription;
   final supabase = Supabase.instance.client;
   String? _userId;
+
+  @override
+  void dispose() {
+    _authSubscription.cancel();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Listen for auth changes
+    _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
+      // if user is already on next screen, do nothing
+      if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+
+      final session = data.session;
+      if (session != null) {
+        setState(() {
+          _userId = session.user.id;
+        });
+
+        // Navigate to MainScreen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => MainScreen()),
+        );
+
+        // Optional toast
+        // ScaffoldMessenger.of(
+        //   context,
+        // ).showSnackBar(SnackBar(content: Text('Logged in: $_userId')));
+      } else {
+        setState(() {
+          _userId = null;
+        });
+      }
+    });
+  }
+
+  Future<void> signInWithMagicLink(String email) async {
+    await supabase.auth.signInWithOtp(
+      email: email,
+      emailRedirectTo:
+          'com.parkingbuddy.app://auth-callback', // Must match dashboard
+    );
+  }
+
   Future<void> signInWithGithub() async {
     await supabase.auth.signInWithOAuth(
       OAuthProvider.github,
@@ -29,54 +82,22 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final session = await supabase.auth.signInAnonymously();
 
-      if (session != null) {
-        setState(() {
-          _userId = session.user?.id;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Logged in anonymously: ${_userId}')),
-        );
-        // Navigate directly
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => MainScreen()),
-        );
-      }
+      setState(() {
+        _userId = session.user?.id;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Logged in anonymously: ${_userId}')),
+      );
+      // Navigate directly
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => MainScreen()),
+      );
     } catch (e) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Login failed: $e')));
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Listen for auth changes
-    supabase.auth.onAuthStateChange.listen((data) {
-      final session = data.session;
-      if (session != null) {
-        setState(() {
-          _userId = session.user?.id;
-        });
-
-        // Navigate to MainScreen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => MainScreen()),
-        );
-
-        // Optional toast
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Logged in: ${_userId}')));
-      } else {
-        setState(() {
-          _userId = null;
-        });
-      }
-    });
   }
 
   @override
@@ -95,6 +116,26 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: signInWithGithub,
               child: Text('Sign in with GitHub'),
             ),
+            ElevatedButton(
+              onPressed: () async {
+                final email = await GenericDialogUtils.prompt(
+                  context: context,
+                  title: 'Enter your email',
+                  hintText: 'Email',
+                  validator: (value) {
+                    if (value.isEmpty) return 'Email cannot be empty';
+                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                      return 'Enter a valid email';
+                    }
+                    return null;
+                  },
+                );
+                if (email == null) return; // user cancelled
+                signInWithMagicLink(email);
+              },
+              child: const Text('Sign in with Magic Link'),
+            ),
+
             SizedBox(height: 16),
             ElevatedButton(
               onPressed: _userId != null ? () => signOut(context) : null,
