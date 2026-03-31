@@ -86,6 +86,7 @@ class _MapTabState extends State<MapTab> {
   }
 
   void _recenterOnUser() {
+    _controller.unfocusCarpark();
     final pos = _controller.currentPosition;
     if (pos != null) {
       _mapController.move(LatLng(pos.latitude, pos.longitude), 16);

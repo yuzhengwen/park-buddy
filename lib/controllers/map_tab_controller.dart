@@ -347,6 +347,11 @@ class MapTabController extends ChangeNotifier {
     onMoveMap();
   }
 
+  void unfocusCarpark() {
+    _selectedCarparkNo = null;
+    notifyListeners();
+  }
+
   void toggleListCollapsed() {
     _isListCollapsed = !_isListCollapsed;
     notifyListeners();
