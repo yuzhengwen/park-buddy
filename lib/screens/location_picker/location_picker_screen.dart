@@ -24,7 +24,6 @@ class CarparkPickerScreen extends StatefulWidget {
 class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
   final _mapController = MapController();
   final _sheetController = DraggableScrollableController();
-  final _sheetSize = ValueNotifier(0.25);
   late final MapTabController _controller;  // ← replaces _locationService + _carparks + _boundedCarparks + _userLocation
 
   bool _hasCenteredOnUser = false;
@@ -42,10 +41,6 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
         final pos = _controller.currentPosition!;
         _mapController.move(LatLng(pos.latitude, pos.longitude), widget.initialMapZoom ?? 16);
       }
-    });
-
-    _sheetController.addListener(() {
-      _sheetSize.value = _sheetController.size;
     });
 
     // If a center was passed in (e.g. editing existing session), go there first
@@ -67,7 +62,6 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
   void dispose() {
     _controller.removeListener(_onControllerUpdate);
     _controller.dispose();
-    _sheetSize.dispose();
     _sheetController.dispose();
     _mapController.dispose();
     super.dispose();
@@ -98,7 +92,7 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
             onMarkerSelect: (carpark) => _onConfirm(context, carpark),
             initialMapCenter: widget.initialMapCenter,
             initialMapZoom: widget.initialMapZoom,
-            sheetSize: _sheetSize,
+            sheetController: _sheetController,
           ),
           CarparkPickerBottomSheet(
             controller: _sheetController,

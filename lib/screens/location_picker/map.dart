@@ -4,7 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:park_buddy/models/carpark.dart';
 
-// Map of carparks with interactive carpark marker pins
+/// Map of carparks with interactive carpark marker pins.
 class CarparkPickerMap extends StatelessWidget {
   final MapController _mapController;
   final LatLng _initialMapCenter;
@@ -13,7 +13,7 @@ class CarparkPickerMap extends StatelessWidget {
   final LatLng? _userLocation;
   final void Function(LatLngBounds)? _onChangedBounds;
   final void Function(Carpark carpark)? _onMarkerSelect;
-  final ValueNotifier<double> _sheetSize;
+  final DraggableScrollableController _sheetController;
 
   const CarparkPickerMap({
     super.key,
@@ -24,7 +24,7 @@ class CarparkPickerMap extends StatelessWidget {
     LatLng? userLocation,
     void Function(LatLngBounds)? onChangedBounds,
     void Function(Carpark carpark)? onMarkerSelect,
-    required ValueNotifier<double> sheetSize,
+    required DraggableScrollableController sheetController,
   }) : _mapController = mapController,
        _initialMapCenter = initialMapCenter ?? const LatLng(1.3521, 103.8198),
        _initialMapZoom = initialMapZoom ?? 16,
@@ -32,7 +32,7 @@ class CarparkPickerMap extends StatelessWidget {
        _userLocation = userLocation,
        _onChangedBounds = onChangedBounds,
        _onMarkerSelect = onMarkerSelect,
-       _sheetSize = sheetSize;
+       _sheetController = sheetController;
 
   @override
   Widget build(BuildContext context) {
@@ -42,10 +42,10 @@ class CarparkPickerMap extends StatelessWidget {
     final appBarHeight = kToolbarHeight;
     final bodyHeight = screenHeight - topPadding - appBarHeight;
 
-    return ValueListenableBuilder<double>(
-      valueListenable: _sheetSize,
-      builder: (context, size, child) {
-        final mapBottom = (bodyHeight * size - sheetRadius).clamp(0.0, double.infinity);
+    return ListenableBuilder(
+      listenable: _sheetController,
+      builder: (context, child) {
+        final mapBottom = (bodyHeight * _sheetController.size - sheetRadius).clamp(0.0, double.infinity);
         return AnimatedContainer(
           duration: Duration(milliseconds: 30),
           margin: EdgeInsets.only(bottom: (mapBottom - sheetRadius).clamp(0.0, double.infinity)),
