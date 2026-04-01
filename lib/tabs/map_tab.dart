@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -7,12 +6,10 @@ import 'package:park_buddy/UI/carpark_marker.dart';
 import 'package:park_buddy/UI/current_location_marker.dart';
 import 'package:park_buddy/UI/search_location_marker.dart';
 import 'package:park_buddy/models/carpark.dart';
-
-import '../screens/start_parking_session_screen.dart';
-import '../UI/carpark_list_panel.dart';
-import '../UI/map_search_bar.dart';
-import '../controllers/map_tab_controller.dart';
-import '../screens/location_picker/bottom_sheet.dart';
+import 'package:park_buddy/screens/start_parking_session_screen.dart';
+import 'package:park_buddy/UI/map_search_bar.dart';
+import 'package:park_buddy/controllers/map_tab_controller.dart';
+import 'package:park_buddy/screens/location_picker/bottom_sheet.dart';
 
 class MapTab extends StatefulWidget {
   const MapTab({super.key});
@@ -93,13 +90,6 @@ class _MapTabState extends State<MapTab> {
     }
   }
 
-  String? _panelLocationStatus() {
-    if (_controller.isTracking) {
-      return 'Updated just now';
-    }
-    return null;
-  }
-
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
@@ -109,7 +99,6 @@ class _MapTabState extends State<MapTab> {
     final currentLatLng = pos == null
         ? MapTabController.defaultCenter
         : LatLng(pos.latitude, pos.longitude);
-    final listOrigin = _controller.searchCenter ?? currentLatLng;
     final markerCarparks = _controller.visibleCarparks;
 
     return Stack(
@@ -194,19 +183,20 @@ class _MapTabState extends State<MapTab> {
             final offset = _bottomSheetController.isAttached
                 ? _bottomSheetController.pixels + 16.0
                 : 16.0;
-            final visible =
-                !_bottomSheetController.isAttached ||
-                _bottomSheetController.size <= 0.5;
+
+            final isVisible = _bottomSheetController.isAttached
+                ? _bottomSheetController.size <= 0.5
+                : true;
 
             return Positioned(
               right: 16,
               bottom: offset,
               child: AnimatedScale(
-                scale: visible ? 1.0 : 0.0,
+                scale: isVisible ? 1.0 : 0.0,
                 duration: Duration(milliseconds: 200),
                 curve: Curves.easeInOut,
                 child: AnimatedOpacity(
-                  opacity: visible ? 1.0 : 0.0,
+                  opacity: isVisible ? 1.0 : 0.0,
                   duration: Duration(milliseconds: 200),
                   child: child!
                 ),
@@ -219,7 +209,6 @@ class _MapTabState extends State<MapTab> {
             children: [
               // Re-centre FAB
               FloatingActionButton.small(
-                heroTag: 'recenter-map',
                 onPressed: pos == null ? null : _recenterOnUser,
                 child: const Icon(Icons.my_location),
               ),

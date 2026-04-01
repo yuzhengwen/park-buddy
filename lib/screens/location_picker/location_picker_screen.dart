@@ -1,10 +1,7 @@
 import 'dart:core';
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:park_buddy/utils/location.dart';
 import 'package:park_buddy/screens/location_picker/map.dart';
 import 'package:park_buddy/screens/location_picker/bottom_sheet.dart';
 import 'package:park_buddy/models/carpark.dart';
@@ -25,9 +22,9 @@ class CarparkPickerScreen extends StatefulWidget {
 }
 
 class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
-  final MapController _mapController = MapController();
-  final DraggableScrollableController _sheetController = DraggableScrollableController();
-  final ValueNotifier<double> _sheetSize = ValueNotifier(0.25);
+  final _mapController = MapController();
+  final _sheetController = DraggableScrollableController();
+  final _sheetSize = ValueNotifier(0.25);
   late final MapTabController _controller;  // ← replaces _locationService + _carparks + _boundedCarparks + _userLocation
 
   bool _hasCenteredOnUser = false;
@@ -104,9 +101,9 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
             sheetSize: _sheetSize,
           ),
           CarparkPickerBottomSheet(
+            controller: _sheetController,
             carparks: _controller.visibleCarparks,  // ← was _boundedCarparks
             onItemSelect: (carpark) => _onConfirm(context, carpark),
-            controller: _sheetController,
           ),
         ],
       ),
