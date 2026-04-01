@@ -10,6 +10,7 @@ import 'package:park_buddy/screens/start_parking_session_screen.dart';
 import 'package:park_buddy/UI/map_search_bar.dart';
 import 'package:park_buddy/controllers/map_tab_controller.dart';
 import 'package:park_buddy/screens/location_picker/bottom_sheet.dart';
+import 'package:park_buddy/UI/bottom_sheet_floating_anchor.dart';
 
 class MapTab extends StatefulWidget {
   const MapTab({super.key});
@@ -177,57 +178,29 @@ class _MapTabState extends State<MapTab> {
         ),
 
         // ── FABs ──────────────────────────────────────────────────────────────
-        AnimatedBuilder(
-          animation: _bottomSheetController,
-          builder: (context, child) {
-            final offset = _bottomSheetController.isAttached
-                ? _bottomSheetController.pixels + 16.0
-                : 16.0;
+        BottomSheetFloatingAnchor(
+          sheetController: _bottomSheetController,
+          children: [
+            // Re-centre FAB
+            FloatingActionButton.small(
+              onPressed: pos == null ? null : _recenterOnUser,
+              child: const Icon(Icons.my_location),
+            ),
 
-            final isVisible = _bottomSheetController.isAttached
-                ? _bottomSheetController.size <= 0.5
-                : true;
-
-            return Positioned(
-              right: 16,
-              bottom: offset,
-              child: AnimatedScale(
-                scale: isVisible ? 1.0 : 0.0,
-                duration: Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                child: AnimatedOpacity(
-                  opacity: isVisible ? 1.0 : 0.0,
-                  duration: Duration(milliseconds: 200),
-                  child: child!
-                ),
-              ),
-            );
-          },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            spacing: 8,
-            children: [
-              // Re-centre FAB
-              FloatingActionButton.small(
-                onPressed: pos == null ? null : _recenterOnUser,
-                child: const Icon(Icons.my_location),
-              ),
-
-              // Park Now FAB
-              FloatingActionButton.extended(
-                label: const Text('Park Now'),
-                icon: const Icon(Icons.local_parking),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => StartParkingSessionScreen(
-                      initialCarpark: _controller.getSelectedOrNearestCarpark(),
-                    ),
+            // Park Now FAB
+            FloatingActionButton.extended(
+              label: const Text('Park Now'),
+              icon: const Icon(Icons.local_parking),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StartParkingSessionScreen(
+                    initialCarpark: _controller.getSelectedOrNearestCarpark(),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
 
         // ── Bottom carpark panel ──────────────────────────────────────────────
