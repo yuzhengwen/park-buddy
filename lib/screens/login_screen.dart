@@ -6,7 +6,8 @@ import 'main_screen.dart';
 import '../utils/auth.dart';
 import 'dart:async';
 import '../services/user_service.dart';
-import 'edit_profile.dart'; // Ensure this points to your EditProfileScreen file
+import 'edit_profile.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -138,45 +139,107 @@ Future<void> _handleNavigation() async {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+// Your updated Widget build method
+
+Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      backgroundColor: Colors.white,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // ElevatedButton(
-            //   onPressed: _signInAnonymously,
-            //   child: const Text('Sign in Anonymously'),
-            // ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: signInWithGithub,
-              child: const Text('Sign in with GitHub'),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () async {
-                final email = await GenericDialogUtils.prompt(
-                  context: context,
-                  title: 'Enter your email',
-                  hintText: 'Email',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Email cannot be empty';
-                    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                      return 'Enter a valid email';
-                    }
-                    return null;
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // --- App Logo ---
+              // Replace 'assets/app_icon.png' with your actual image path
+              Image.asset(
+                'assets/app_icon.png', 
+                height: 180,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 20),
+
+              // --- Welcome Text ---
+              const Text(
+                'Park Buddy',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4A4A4A),
+                ),
+              ),
+              const Text(
+                'Your parking companion',
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 40),
+
+              // --- GitHub Button (Brand Solid) ---
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton.icon(
+                  onPressed: () => signInWithGithub(),
+                  icon: const FaIcon(FontAwesomeIcons.github, size: 20),
+                  label: const Text(
+                    'Sign in with GitHub',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF24292E), // GitHub Gray
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // --- Magic Link Button (Clean Outline) ---
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    final email = await GenericDialogUtils.prompt(
+                      context: context,
+                      title: 'Enter your email',
+                      hintText: 'Email',
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return 'Email cannot be empty';
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                          return 'Enter a valid email';
+                        }
+                        return null;
+                      },
+                    );
+                    if (email != null) signInWithMagicLink(email);
                   },
-                );
-                if (email != null) {
-                  signInWithMagicLink(email);
-                }
-              },
-              child: const Text('Sign in with Magic Link'),
-            ),
-          ],
+                  icon: const Icon(Icons.auto_awesome, size: 20),
+                  label: const Text(
+                    'Sign in with Magic Link',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF67B27C), // Icon Green
+                    side: const BorderSide(color: Color(0xFF67B27C), width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 30),
+              const Text(
+                'By signing in, you agree to our Terms of Service',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

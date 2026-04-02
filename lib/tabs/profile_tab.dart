@@ -43,11 +43,12 @@ class _ProfileTabState extends State<ProfileTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text("Profile", style: TextStyle(color: Colors.black)),
-      ),
+      // appBar: AppBar(
+      //   centerTitle: true,
+      //   backgroundColor: Colors.white,
+      //   elevation: 0,
+      //   title: const Text("Profile", style: TextStyle(color: Color(0xFFFF7643))),
+      // ),
       body: FutureBuilder<Map<String, dynamic>?>(
         future: _userService.getProfile(),
         builder: (context, snapshot) {
