@@ -13,6 +13,43 @@ class UserService {
   // 3. Get Email
   String get email => currentUser?.email ?? "No email linked";
 
+  Future<void> deleteUserAccount() async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) return;
+
+      // 1. Delete their profile data from your public 'profiles' table
+      await _supabase
+          .from('users')
+          .delete()
+          .match({'userid': userId});
+
+      // 2. Log them out immediately
+      await _supabase.auth.signOut();
+      
+      // Note: To fully delete the AUTH user, you usually trigger 
+      // a PostgreSQL function or an Edge Function for security.
+    } catch (e) {
+      throw Exception("Failed to delete account: $e");
+    }
+  }
+  Future<bool> userProfileExists() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return false;
+    print("DEBUG: Querying DB for userid: ${user.id}");
+
+    try {
+      final response = await _supabase
+          .from('users')
+          .select()
+          .eq('userid', user.id)
+          .maybeSingle(); // Use maybeSingle to avoid errors if not found
+      
+      return response != null;
+    } catch (e) {
+      return false;
+    }
+  }
   Future<Map<String, dynamic>?> getProfile() async {
       if (userId == null) return null;
       
@@ -29,22 +66,25 @@ class UserService {
         return null;
       }
     }
-    Future<void> updateProfile({required String newName, String? newAvatar}) async {
-        if (userId == null) return;
+    Future<void> updateProfile({
+      required String newName, 
+      String? newAvatar, 
+      String? email,
+    }) async {
+      final user = _supabase.auth.currentUser;
+      if (user == null) return;
 
-        final updates = {
-          'username': newName,
-          // 'updated_at': DateTime.now().toIso8601String(),
-        };
+      final updates = {
+        'userid': user.id,
+        'username': newName,
+        'email':user.email,
+      };
 
-        if (newAvatar != null) {
-          updates['profilepic'] = newAvatar;
-        }
+      if (newAvatar != null) {
+        updates['profilepic'] = newAvatar;
+      }
 
-        await _supabase
-            .from('users')
-            .update(updates)
-            .eq('userid', userId!);
+      await _supabase.from('users').upsert(updates);
     }
     Future<String> uploadProfilePicture(File imageFile) async {
     if (userId == null) throw Exception("User not logged in");
@@ -55,9 +95,9 @@ class UserService {
     try {
       // Upload to the 'avatars' bucket
       print("UPLOAD ATTEMPT ---");
-print("Bucket: avatars");
-print("Path: $userId/${DateTime.now().millisecondsSinceEpoch}.jpg");
-print("Auth ID from Supabase: ${_supabase.auth.currentUser?.id}");
+      print("Bucket: avatars");
+      print("Path: $userId/${DateTime.now().millisecondsSinceEpoch}.jpg");
+      print("Auth ID from Supabase: ${_supabase.auth.currentUser?.id}");
       await _supabase.storage.from('avatars').upload(
             fileName,
             imageFile,
