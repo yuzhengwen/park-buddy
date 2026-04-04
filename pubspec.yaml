@@ -68,7 +68,7 @@ flutter_icons:
   ios: true
   image_path: "assets/app_icon.png"
   adaptive_icon_background: "#00FF00"   # bright green background
-  adaptive_icon_foreground: "assets/app_icon.png"
+  adaptive_icon_foreground: "assets/mainpage_icon.png"
 flutter:
 
   # The following line ensures that the Material Icons font is
