@@ -3,8 +3,6 @@ import '../utils/parking_service.dart';
 import '../UI/CarCard.dart';
 import 'modify_car_screen.dart';
 import '../services/car_service.dart';
-
-
 class CarScreen extends StatefulWidget {
   const CarScreen({super.key});
 
@@ -65,6 +63,35 @@ class _CarScreenState extends State<CarScreen> {
             const Divider(),
             if (isLoading)
               const Center(child: CircularProgressIndicator())
+            else if (cars.isEmpty)
+              Container(
+                height: MediaQuery.of(context).size.height * 0.6, 
+                alignment: Alignment.center,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center, // Centers the children vertically in the Column
+                  children: [
+                    Icon(
+                      Icons.directions_car_filled_outlined, 
+                      size: 80, 
+                      color: Colors.grey.shade300
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "No cars added yet",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Tap the button below to get started",
+                      style: TextStyle(color: Colors.grey.shade400),
+                    ),
+                  ],
+                ),
+              )
             else
               ListView.builder(
                 shrinkWrap: true,
@@ -117,7 +144,7 @@ class _CarScreenState extends State<CarScreen> {
             icon: const Icon(Icons.add),
             label: const Text("Add Car"),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6200EA),
+              backgroundColor: const Color(0xFFFF7643),
               foregroundColor: Colors.white,
               minimumSize: const Size(double.infinity, 50),
             ),

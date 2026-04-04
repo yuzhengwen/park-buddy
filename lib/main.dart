@@ -25,6 +25,9 @@ class MyApp extends StatelessWidget {
       title: 'Park Buddy',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        appBarTheme: const AppBarTheme(
+        centerTitle: true,
+        ),
       ),
       home: LoginScreen(),
     );

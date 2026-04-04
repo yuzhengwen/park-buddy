@@ -187,7 +187,10 @@ void _startTimer() {
     try {
       final bytes = await picked.readAsBytes();
       final url = await _storageService.uploadImage(
-          session!.sessionId, bytes);
+        bucket: "parking-images",
+        folder: session!.sessionId,
+        bytes: bytes,
+      );
 
       final updatedImages = [...imageUrls, url];
       await _sessionService.updateSessionImages(

@@ -130,7 +130,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: Color(0xFF6200EA),
+                        color: Color(0xFFFF7643),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -188,7 +188,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               : const Icon(Icons.check),
             label: Text(_isSaving ? "Saving..." : "Save Changes"),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6200EA),
+              backgroundColor: const Color(0xFFFF7643),
               foregroundColor: Colors.white,
               minimumSize: const Size(double.infinity, 55),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

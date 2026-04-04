@@ -1,9 +1,10 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
-
+import 'dart:typed_data';
+import 'storage_service.dart';
 class UserService {
   final _supabase = Supabase.instance.client;
-
+  final _storageService = StorageService();
   // 1. Get current user object
   User? get currentUser => _supabase.auth.currentUser;
 
@@ -87,28 +88,21 @@ class UserService {
       await _supabase.from('users').upsert(updates);
     }
     Future<String> uploadProfilePicture(File imageFile) async {
-    if (userId == null) throw Exception("User not logged in");
+      if (userId == null) throw Exception("User not logged in");
 
-    // Create a unique path using timestamp to avoid browser caching issues
-    final String fileName = '$userId/${DateTime.now()}.jpg';
+      try {
+        final Uint8List bytes = await imageFile.readAsBytes();
 
-    try {
-      // Upload to the 'avatars' bucket
-      print("UPLOAD ATTEMPT ---");
-      print("Bucket: avatars");
-      print("Path: $userId/${DateTime.now().millisecondsSinceEpoch}.jpg");
-      print("Auth ID from Supabase: ${_supabase.auth.currentUser?.id}");
-      await _supabase.storage.from('avatars').upload(
-            fileName,
-            imageFile,
-            fileOptions: const FileOptions(upsert: true),
-          );
+        final String publicUrl = await _storageService.uploadImage(
+          bucket: 'avatars',
+          folder: userId!,
+          bytes: bytes,
+        );
 
-      // Return the public URL so the UI can pass it to the save method
-      return _supabase.storage.from('avatars').getPublicUrl(fileName);
-    } catch (e) {
-      print("Storage Error: $e");
-      throw Exception("Failed to upload image to storage.");
+        return publicUrl;
+      } catch (e) {
+        print("Storage Error: $e");
+        throw Exception("Failed to upload image to storage via StorageService.");
+      }
     }
-  }
 }
