@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../controllers/car_controller.dart';
 
 class AddCarScreen extends StatefulWidget {
   final Map<String, dynamic>? carToEdit;
@@ -89,7 +90,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
                   labelText: 'Car Nickname',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value!.isEmpty ? 'Please enter a name' : null,
+                validator: CarValidationController.validateNickname,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -98,7 +99,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
                   labelText: 'License Plate',
                   border: OutlineInputBorder(),
                 ),
-                enabled: !isEditing,
+                validator: CarValidationController.validatePlate,
                 textCapitalization: TextCapitalization.characters,
               ),
               const SizedBox(height: 24),

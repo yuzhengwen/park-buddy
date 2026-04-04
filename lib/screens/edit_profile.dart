@@ -3,6 +3,7 @@ import '../services/user_service.dart'; // Import your new service
 import 'package:image_picker/image_picker.dart'; // For image picking 
 import 'dart:io';
 import 'main_screen.dart'; // Import the main screen to navigate after setup
+import '../controllers/profile_controller.dart'; // Import validation logic
 
 class EditProfileScreen extends StatefulWidget {
   
@@ -155,7 +156,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                validator: (val) => (val == null || val.isEmpty) ? "Name cannot be empty" : null,
+                validator: ProfileController.validateNickname,
               ),
               
               const SizedBox(height: 16),
