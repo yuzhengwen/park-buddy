@@ -21,11 +21,27 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = const Color(0xFFFF7643);
+    final secondary = const Color(0xFFFF9C41);
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFFFF7643),
+      brightness: .light,
+      dynamicSchemeVariant: .fidelity,
+      primary: primary,
+      secondary: secondary,
+    );
+    final darkColorScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFFFF7643),
+      brightness: .dark,
+      dynamicSchemeVariant: .fidelity,
+      primary: primary,
+      secondary: secondary,
+    );
+
     return MaterialApp(
       title: 'Park Buddy',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
+      theme: ThemeData(colorScheme: colorScheme),
+      darkTheme: ThemeData(colorScheme: darkColorScheme),
       home: LoginScreen(),
     );
   }
