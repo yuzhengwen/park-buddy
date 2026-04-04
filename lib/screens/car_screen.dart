@@ -114,10 +114,16 @@ class _CarScreenState extends State<CarScreen> {
                       if (result == 'delete') {
                         // User pressed delete
                         await _carService.deleteCar(cars[index]['carplate']);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("${cars[index]['carname']} removed successfully!"))
+                        );
                         _loadCars(); // Refresh list
                       } else if (result is Map<String, dynamic>) {
                         // User updated details
                         await _carService.updateCar(cars[index]['carplate'], result);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("${cars[index]['carname']} updated successfully!"))
+                        );
                         _loadCars(); // Refresh list
                       }
                     },
@@ -154,5 +160,6 @@ class _CarScreenState extends State<CarScreen> {
     );
   }
 }
+
 
 

@@ -95,7 +95,14 @@ class _ProfileTabState extends State<ProfileTab> {
                       context,
                       MaterialPageRoute(builder: (context) => const EditProfileScreen()),
                     );
-                    if (updated == true) setState(() {});
+                    if (updated == true) 
+                    {                       
+                      setState(() {});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Profile updated successfully!"))
+                      );
+                    }
+ 
                   },
                 ),
 
