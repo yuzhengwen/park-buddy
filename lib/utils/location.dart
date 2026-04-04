@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
 class _TrackingCallbacks {
@@ -13,6 +14,78 @@ class _TrackingCallbacks {
   });
 }
 
+class LocationService2 {
+  static final _singleton = LocationService2._();
+
+  StreamController<LatLng>? _outputLocationStream;
+  StreamSubscription<Position>? _inputLocationStream;
+  int _listenerCount = 0;
+
+  LocationService2._();
+  factory LocationService2() => _singleton;
+
+  /// Broadcasts location updates to all listeners.
+  Stream<LatLng> get locationStream {
+    return _outputLocationStream!.stream;
+  }
+
+  Future<void> requestPermissions() async {
+    var permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.deniedForever) {
+      return Future.error('Location permissions are permanently denied.');
+    }
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error('Location permissions are denied.');
+      }
+    }
+  }
+
+  Future<void> addListener({
+    LocationAccuracy accuracy = LocationAccuracy.best,
+    int distanceFilter = 0,
+  }) async {
+    _listenerCount++;
+    if (_inputLocationStream != null) return;
+
+    await requestPermissions();
+
+    _outputLocationStream ??= StreamController<LatLng>.broadcast();
+
+    _inputLocationStream = Geolocator
+        .getPositionStream(
+          locationSettings: LocationSettings(
+            accuracy: accuracy,
+            distanceFilter: distanceFilter,
+          ),
+        )
+        .listen(
+          (position) => _outputLocationStream?.add(
+            LatLng(position.latitude, position.longitude),
+          ),
+          onError: (error) {
+            _outputLocationStream?.addError(error);
+            removeListener();
+          },
+          cancelOnError: false,
+        );
+  }
+
+  Future<void> removeListener() async {
+    _listenerCount = (_listenerCount - 1).clamp(0, double.maxFinite.toInt());
+
+    if (_listenerCount == 0) {
+      await _inputLocationStream?.cancel();
+      _inputLocationStream = null;
+      await _outputLocationStream?.close();
+      _outputLocationStream = null;
+    }
+  }
+}
+
 /// Simplified location service management.
 ///
 /// Call begin() to track the user's live location with a callback. Permission
@@ -20,12 +93,18 @@ class _TrackingCallbacks {
 /// automatically. Remember to call dispose() when done to release the
 /// trackers.
 class LocationService {
+  static final _singleton = LocationService._internal();
+
   StreamSubscription<Position>? _positionSubscription;
   StreamSubscription<ServiceStatus>? _statusSubscription;
   bool _disposed = false;
 
+  LocationService._internal();
+
+  factory LocationService() => _singleton;
+
   /// Check for and handle location permissions.
-  static Future<void> obtainPermissions() async {
+  Future<void> obtainPermissions() async {
     var permission = await Geolocator.checkPermission();
 
     if (permission == LocationPermission.deniedForever) {
@@ -44,26 +123,14 @@ class LocationService {
   /// permissions and setting up update streams. To be called from initState()
   /// or similar.
   ///
-  /// onLocationUpdate is called with the new location whenever location
+  /// [onLocationUpdate] is called with the new location whenever location
   /// changes. It is also called with null argument when location is disabled.
   Future<void> begin({
     required void Function(Position?) onLocationUpdate,
     void Function(Object)? onError,
     int distanceFilter = 10,
   }) async {
-    // Don't set up anything if no permissions granted
-    try {
-      await obtainPermissions();
-    } catch (e) {
-      onError?.call(e);
-      return;
-    }
-
-    final trackingCallbacks = _TrackingCallbacks(
-      onLocationUpdate: onLocationUpdate,
-      onError: onError,
-      distanceFilter: distanceFilter,
-    );
+    await obtainPermissions();
 
     _beginStatusTracking(trackingCallbacks);
     await _beginLocationTracking(trackingCallbacks);
@@ -147,11 +214,13 @@ class LocationService {
   }
 
   /// Fully tears down all streams. The instance cannot be reused after this.
+  @override
   void dispose() {
     _disposed = true;
     _positionSubscription?.cancel();
     _positionSubscription = null;
     _statusSubscription?.cancel();
     _statusSubscription = null;
+    super.dispose();
   }
 }
