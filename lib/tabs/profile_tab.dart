@@ -12,7 +12,6 @@ class ProfileTab extends StatefulWidget {
   @override
   _ProfileTabState createState() => _ProfileTabState();
 }
-
 class _ProfileTabState extends State<ProfileTab> {
   final UserService _userService = UserService();
 
@@ -43,12 +42,6 @@ class _ProfileTabState extends State<ProfileTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // appBar: AppBar(
-      //   centerTitle: true,
-      //   backgroundColor: Colors.white,
-      //   elevation: 0,
-      //   title: const Text("Profile", style: TextStyle(color: Color(0xFFFF7643))),
-      // ),
       body: FutureBuilder<Map<String, dynamic>?>(
         future: _userService.getProfile(),
         builder: (context, snapshot) {
@@ -65,7 +58,6 @@ class _ProfileTabState extends State<ProfileTab> {
             padding: const EdgeInsets.symmetric(vertical: 20),
             child: Column(
               children: [
-                // --- YOUR ORIGINAL PICTURE LOGIC ---
                 CircleAvatar(
                   radius: 60,
                   backgroundColor: const Color(0xFF6200EA),
@@ -84,8 +76,6 @@ class _ProfileTabState extends State<ProfileTab> {
                   style: const TextStyle(fontSize: 16, color: Colors.grey),
                 ),
                 const SizedBox(height: 30),
-
-                // --- NEW UI ROWS (Using standard Icons) ---
                 
                 ProfileMenu(
                   text: "Edit Profile",
@@ -137,8 +127,6 @@ class _ProfileTabState extends State<ProfileTab> {
     );
   }
 }
-
-// --- ICON-BASED MENU (No SVG dependency needed) ---
 class ProfileMenu extends StatelessWidget {
   const ProfileMenu({
     super.key,
@@ -148,7 +136,7 @@ class ProfileMenu extends StatelessWidget {
   });
 
   final String text;
-  final IconData icon; // Uses IconData instead of String path
+  final IconData icon;
   final VoidCallback? press;
 
   @override
@@ -166,7 +154,7 @@ class ProfileMenu extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: const Color(0xFFFF7643), // Matches that orange color
+              color: const Color(0xFFFF7643),
               size: 24,
             ),
             const SizedBox(width: 20),

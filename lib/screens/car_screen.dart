@@ -28,7 +28,6 @@ class _CarScreenState extends State<CarScreen> {
   }
 
   Future<void> _navigateToAddCar() async {
-    // 1. Open the screen and WAIT for the result
     final Map<String, dynamic>? newCarData = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const AddCarScreen()),
@@ -68,7 +67,7 @@ class _CarScreenState extends State<CarScreen> {
                 height: MediaQuery.of(context).size.height * 0.6, 
                 alignment: Alignment.center,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center, // Centers the children vertically in the Column
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
                       Icons.directions_car_filled_outlined, 

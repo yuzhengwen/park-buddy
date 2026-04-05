@@ -19,7 +19,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   late final StreamSubscription<AuthState> _authSubscription;
   final supabase = Supabase.instance.client;
-  final UserService _userService = UserService(); // Instantiate here
+  final UserService _userService = UserService();
   String? _userId;
 
   @override
