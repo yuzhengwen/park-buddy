@@ -117,7 +117,7 @@ class _CarScreenState extends State<CarScreen> {
             icon: const Icon(Icons.add),
             label: const Text("Add Car"),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6200EA),
+              backgroundColor: const Color(0xFFFF7643),
               foregroundColor: Colors.white,
               minimumSize: const Size(double.infinity, 50),
             ),

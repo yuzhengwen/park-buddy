@@ -123,7 +123,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
               ElevatedButton(
                 onPressed: _submitData,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6200EA),
+                  backgroundColor: const Color(0xFFFF7643),
                   foregroundColor: Colors.white,
                   minimumSize: const Size(double.infinity, 50),
                 ),
@@ -163,10 +163,10 @@ class _AddCarScreenState extends State<AddCarScreen> {
             decoration: BoxDecoration(
               // Highlight color if selected
               color: isSelected 
-                  ? const Color(0xFF6200EA).withOpacity(0.1) 
+                  ? const Color(0xFFFF7643).withOpacity(0.1) 
                   : Colors.transparent,
               border: Border.all(
-                color: isSelected ? const Color(0xFF6200EA) : Colors.grey.shade300,
+                color: isSelected ? const Color(0xFFFF7643) : Colors.grey.shade300,
                 width: 2,
               ),
               borderRadius: BorderRadius.circular(12),
@@ -174,7 +174,7 @@ class _AddCarScreenState extends State<AddCarScreen> {
             child: Icon(
               item['icon'],
               size: 40,
-              color: isSelected ? const Color(0xFF6200EA) : Colors.grey,
+              color: isSelected ? const Color(0xFFFF7643) : Colors.grey,
             ),
           ),
         );

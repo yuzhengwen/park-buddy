@@ -31,7 +31,7 @@ class _MyParkingTabState extends State<MyParkingTab> {
     return Scaffold(
       appBar: AppBar(
         title: Text('My Parking', style: TextStyle(color: Colors.white)),
-        backgroundColor: Color(0xFF6200EA),
+        backgroundColor: Color(0xFFFF7643),
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
