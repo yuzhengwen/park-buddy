@@ -9,7 +9,6 @@ import 'package:park_buddy/UI/search_location_marker.dart';
 import 'package:park_buddy/models/carpark.dart';
 
 import '../screens/start_parking_session_screen.dart';
-import '../UI/carpark_list_panel.dart';
 import '../UI/map_search_bar.dart';
 import '../controllers/map_tab_controller.dart';
 import '../screens/location_picker/bottom_sheet.dart';
@@ -247,6 +246,7 @@ class _MapTabState extends State<MapTab> {
           carparks: _controller.visibleCarparks,
           onItemSelect: _focusCarpark,
           userLocation: _controller.currentPosition != null ? currentLatLng : null,
+          locationErrorMessage: _controller.locationErrorMessage,
         ),
       ],
     );

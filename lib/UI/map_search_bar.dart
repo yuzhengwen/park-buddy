@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class MapSearchBar extends StatelessWidget {
+class MapSearchBar extends StatefulWidget {
   const MapSearchBar({
     super.key,
     required this.searchController,
@@ -17,7 +17,18 @@ class MapSearchBar extends StatelessWidget {
   final String searchText;
   final VoidCallback onApply;
   final VoidCallback onOpenSettings;
+  @override
+  State<MapSearchBar> createState() => _MapSearchBarState();
+}
 
+class _MapSearchBarState extends State<MapSearchBar> {
+  String? _getRadiusError() {
+    final radius = double.tryParse(widget.radiusController.text.trim());
+    if (radius != null && radius > 1.0) {
+      return 'Max 1 km';
+    }
+    return null;
+  }
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -31,29 +42,29 @@ class MapSearchBar extends StatelessWidget {
               children: [
                 Expanded(
                   child: TextField(
-                    controller: searchController,
+                    controller: widget.searchController,
                     textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
                       hintText: 'Place, address, postal code, or block no.',
                       prefixIcon: const Icon(Icons.search),
-                      suffixIcon: searchText.isEmpty
+                      suffixIcon: widget.searchText.isEmpty
                           ? null
                           : IconButton(
-                              onPressed: searchController.clear,
+                              onPressed: widget.searchController.clear,
                               icon: const Icon(Icons.clear),
                             ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    onSubmitted: (_) => onApply(),
+                    onSubmitted: (_) => widget.onApply(),
                   ),
                 ),
                 const SizedBox(width: 10),
                 SizedBox(
                   width: 76,
                   child: TextField(
-                    controller: radiusController,
+                    controller: widget.radiusController,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
@@ -61,23 +72,27 @@ class MapSearchBar extends StatelessWidget {
                       isDense: true,
                       labelText: 'Km',
                       hintText: '1',
+                      errorText: _getRadiusError(),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    onSubmitted: (_) => onApply(),
+                    onSubmitted: (_) => widget.onApply(),
+                    onChanged: (_) {
+                      setState(() {});
+                    },
                   ),
                 ),
                 const SizedBox(width: 10),
                 SizedBox(
                   height: 56,
                   child: FilledButton(
-                    onPressed: isSearchingLocation ? null : onApply,
-                    child: Text(isSearchingLocation ? '...' : 'Go'),
+                    onPressed: widget.isSearchingLocation ? null : widget.onApply,
+                    child: Text(widget.isSearchingLocation ? '...' : 'Go'),
                   ),
                 ),
                 IconButton(
-                  onPressed: onOpenSettings,
+                  onPressed: widget.onOpenSettings,
                   icon: const Icon(Icons.settings),
                   tooltip: 'Open app settings',
                 ),

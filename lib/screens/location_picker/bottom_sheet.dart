@@ -11,6 +11,7 @@ class CarparkPickerBottomSheet extends StatefulWidget {
   final void Function(Carpark carpark)? onItemSelect;
   final DraggableScrollableController controller;
   final LatLng? userLocation;
+  final String? locationErrorMessage;
 
   const CarparkPickerBottomSheet({
     super.key,
@@ -18,6 +19,7 @@ class CarparkPickerBottomSheet extends StatefulWidget {
     this.onItemSelect,
     required this.controller,
     this.userLocation,
+    this.locationErrorMessage,
   });
 
   @override
@@ -67,8 +69,10 @@ class _CarparkPickerBottomSheetState extends State<CarparkPickerBottomSheet> {
             },
             child: _SheetContent(
               scrollController: scrollController,
+              sheetController: widget.controller,
               carparks: widget.carparks,
               userLocation: widget.userLocation,
+              locationErrorMessage: widget.locationErrorMessage,
               onItemSelect: (carpark) async {
                 widget.onItemSelect?.call(carpark);
                 scrollController.jumpTo(0);
@@ -86,52 +90,121 @@ class _CarparkPickerBottomSheetState extends State<CarparkPickerBottomSheet> {
   }
 }
 
-class _SheetContent extends StatelessWidget {
+class _SheetContent extends StatefulWidget {
   final ScrollController scrollController;
+  final DraggableScrollableController sheetController;
   final List<Carpark> carparks;
   final LatLng? userLocation;
   final void Function(Carpark carpark)? onItemSelect;
+  final String? locationErrorMessage;
 
   const _SheetContent({
     required this.scrollController,
+    required this.sheetController,
     required this.carparks,
     this.userLocation,
     this.onItemSelect,
+    this.locationErrorMessage,
   });
+
+  @override
+  State<_SheetContent> createState() => _SheetContentState();
+}
+
+class _SheetContentState extends State<_SheetContent> {
+  bool _isExpanded = true;
+
+  Future<void> _toggleExpand() async {
+    if (_isExpanded) {
+      await widget.sheetController.animateTo(
+        0.25,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      await widget.sheetController.animateTo(
+        0.7,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    }
+    setState(() => _isExpanded = !_isExpanded);
+  }
 
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
-      controller: scrollController,
+      controller: widget.scrollController,
       slivers: [
         SliverToBoxAdapter(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const _DragHandle(),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text(
-                    'Nearest HDB Car Parks',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Nearest HDB Car Parks (${widget.carparks.length})',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            _isExpanded ? Icons.expand_more : Icons.expand_less,
+                          ),
+                          onPressed: _toggleExpand,
+                        ),
+                      ],
+                    ),
+                    if (widget.locationErrorMessage != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          border: Border.all(color: Colors.red.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.location_off, color: Colors.red.shade700, size: 20),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                widget.locationErrorMessage!,
+                                style: TextStyle(
+                                  color: Colors.red.shade700,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],
           ),
         ),
-        if (carparks.isNotEmpty)
+        if (widget.carparks.isNotEmpty)
           SliverList.builder(
-            itemCount: carparks.length,
+            itemCount: widget.carparks.length,
             itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: _CarparkCard(
-                  onItemSelect: onItemSelect,
-                  carpark: carparks[index],
-                  userLocation: userLocation,
+                  onItemSelect: widget.onItemSelect,
+                  carpark: widget.carparks[index],
+                  userLocation: widget.userLocation,
                 ),
               );
             },
@@ -198,8 +271,7 @@ class _CarparkCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text('$carparkNo $distanceKm'),
-                    Text('${carpark.carParkType} • ${carpark.shortTermParking}',
-                    ),
+                    Text('${carpark.carParkType} • ${carpark.shortTermParking}'),
                   ],
                 ),
               ),
