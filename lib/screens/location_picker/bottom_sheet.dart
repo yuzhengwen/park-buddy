@@ -112,7 +112,7 @@ class _SheetContent extends StatefulWidget {
 }
 
 class _SheetContentState extends State<_SheetContent> {
-  bool _isExpanded = true;
+  bool _isExpanded = false;
 
   Future<void> _toggleExpand() async {
     if (_isExpanded) {
