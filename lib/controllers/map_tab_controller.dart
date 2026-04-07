@@ -60,6 +60,13 @@ class MapTabController extends ChangeNotifier {
   LatLng? get searchCenter => _searchCenter;
   String? get searchCenterLabel => _searchCenterLabel;
   bool get isUsingTextFallback => _isUsingTextFallback;
+  
+  String? get locationErrorMessage {
+    if (!_isTracking && _statusMessage.contains('Location')) {
+      return _statusMessage;
+    }
+    return null;
+  }
 
   // ── Initialisation ────────────────────────────────────────────────────────
 
@@ -223,7 +230,12 @@ class MapTabController extends ChangeNotifier {
     required VoidCallback onMoveMap,
   }) async {
     final radius = double.tryParse(radiusText.trim());
-    _radiusKm = (radius == null || radius <= 0) ? defaultRadiusKm : radius;
+    if (radius != null && radius > 1.0) {
+      _radiusKm = 1.0;
+      _statusMessage = 'Maximum radius is 1 km. Setting to 1 km.';
+    } else {
+      _radiusKm = (radius == null || radius <= 0) ? defaultRadiusKm : radius;
+    }
 
     if (searchQuery.isEmpty) {
       _searchCenter = null;
@@ -314,7 +326,10 @@ class MapTabController extends ChangeNotifier {
         if (!matchesSearch) return false;
       }
 
-      if (origin == null) return true;
+      if (origin == null) {
+        // Don't show carpark if no location available and no search performed
+        return _isUsingTextFallback || _searchText.isNotEmpty;
+      }
 
       return MathUtils.distanceKm(origin, carpark.position) <= _radiusKm;
     }).toList();

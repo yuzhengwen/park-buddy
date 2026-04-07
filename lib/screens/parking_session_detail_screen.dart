@@ -32,7 +32,7 @@ class _ParkingSessionDetailView extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Parking Session',
             style: TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF6200EA),
+        backgroundColor: const Color(0xFFFF7643),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: c.isLoadingSession

@@ -60,7 +60,7 @@ class _ProfileTabState extends State<ProfileTab> {
               children: [
                 CircleAvatar(
                   radius: 60,
-                  backgroundColor: const Color(0xFF6200EA),
+                  backgroundColor: const Color(0xFFFF7643),
                   backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
                   child: avatarUrl == null 
                       ? const Icon(Icons.person, size: 50, color: Colors.white) 

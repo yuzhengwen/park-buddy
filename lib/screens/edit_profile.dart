@@ -114,7 +114,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 children: [
                   CircleAvatar(
                     radius: 50,
-                    backgroundColor: const Color(0xFF6200EA),
+                    backgroundColor: const Color(0xFFFF7643),
                     backgroundImage: _imageFile != null 
                           ? FileImage(_imageFile!) as ImageProvider // <--- Correct for local files
                           : (_avatarUrl != null && _avatarUrl!.isNotEmpty

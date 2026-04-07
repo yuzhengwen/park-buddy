@@ -49,9 +49,9 @@ class _CarCardState extends State<CarCard> {
               caricon,
               fit: BoxFit.contain,
               errorBuilder: (context, error, stackTrace) =>
-                  Icon(Icons.directions_car, size: 100, color: Color(0xFF6200EA)),
+                  Icon(Icons.directions_car, size: 100, color: Color(0xFFFF7643)),
             )
-          : Icon(_getCarIcon(caricon), size: 100, color: Color(0xFF6200EA)),
+          : Icon(_getCarIcon(caricon), size: 100, color: Color(0xFFFF7643)),
     );
   }
 

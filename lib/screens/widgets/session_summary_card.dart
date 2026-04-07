@@ -100,7 +100,7 @@ class SessionSummaryCard extends StatelessWidget {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
-                        color: Color(0xFF6200EA),
+                        color: Color(0xFFFF7643),
                       ),
                     ),
                     const SizedBox(width: 4), // spacing
