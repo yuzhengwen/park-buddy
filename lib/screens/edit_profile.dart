@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import '../services/user_service.dart'; // Import your new service
 import 'package:image_picker/image_picker.dart'; // For image picking 
 import 'dart:io';
+import 'main_screen.dart'; // Import the main screen to navigate after setup
+import '../controllers/profile_controller.dart'; // Import validation logic
 
 class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({super.key});
-
+  
+  final bool isFirstTime;
+  const EditProfileScreen({super.key,this.isFirstTime = false});
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
@@ -57,10 +60,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       await _userService.updateProfile(
         newName: _nameController.text,
         newAvatar: uploadedUrl,
+        email: widget.isFirstTime ? _userService.email : null,
       );
 
       if (mounted) {
-        Navigator.pop(context, true);
+        if (widget.isFirstTime) {
+          // If this is a new setup, move FORWARD to the app
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const MainScreen()),
+          );
+        } else {
+          // If they were just editing from the settings menu, go BACK
+          Navigator.pop(context, true);
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,7 +101,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Edit Profile")),
+      appBar: AppBar(title: Text(widget.isFirstTime ? "Set Up Profile" : "Edit Profile")),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Form(
@@ -143,7 +156,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                validator: (val) => (val == null || val.isEmpty) ? "Name cannot be empty" : null,
+                validator: ProfileController.validateNickname,
               ),
               
               const SizedBox(height: 16),

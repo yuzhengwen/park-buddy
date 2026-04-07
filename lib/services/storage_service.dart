@@ -1,21 +1,24 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:typed_data';
-
 class StorageService {
   final _supabase = Supabase.instance.client;
-  static const _bucket = 'parking-images';
 
-  // Uploads raw bytes to Storage, returns the public URL
-  Future<String> uploadImage(String sessionId, Uint8List bytes) async {
-    final fileName =
-        '$sessionId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+  Future<String> uploadImage({
+    required String bucket,
+    required String folder,
+    required Uint8List bytes,
+  }) async {
+    final fileName = '$folder/${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-    await _supabase.storage.from(_bucket).uploadBinary(
+    await _supabase.storage.from(bucket).uploadBinary(
           fileName,
           bytes,
-          fileOptions: const FileOptions(contentType: 'image/jpeg'),
+          fileOptions: const FileOptions(
+            contentType: 'image/jpeg',
+            upsert: true, // Overwrites if the file already exists
+          ),
         );
 
-    return _supabase.storage.from(_bucket).getPublicUrl(fileName);
+    return _supabase.storage.from(bucket).getPublicUrl(fileName);
   }
 }

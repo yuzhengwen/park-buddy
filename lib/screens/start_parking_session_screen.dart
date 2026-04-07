@@ -69,7 +69,11 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
         final imgUrls = await Future.wait(
           _parkingPictures.map((img) async {
             final bytes = await img.readAsBytes();
-            return _storageService.uploadImage(session.sessionId, bytes);
+            return _storageService.uploadImage(
+              bucket: "parking-images",
+              folder: session.sessionId,
+              bytes: bytes,
+            );
           }),
         );
 

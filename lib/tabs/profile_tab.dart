@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../utils/auth.dart'; // <- import your reusable logout function
-import '../screens/family_screen.dart'; // <- import the family screen
-import '../screens/car_screen.dart'; // <- import the car screen
+import '../utils/auth.dart'; 
+import '../screens/family_screen.dart'; 
+import '../screens/car_screen.dart'; 
 import '../screens/edit_profile.dart';
-import '../services/user_service.dart'; // <- import the user service to fetch profile data
+import '../services/user_service.dart';
+import '../screens/login_screen.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
@@ -11,33 +12,52 @@ class ProfileTab extends StatefulWidget {
   @override
   _ProfileTabState createState() => _ProfileTabState();
 }
-
 class _ProfileTabState extends State<ProfileTab> {
   final UserService _userService = UserService();
 
+  void _showDeleteDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Account?"),
+        content: const Text("This action is permanent and cannot be undone."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              await _userService.deleteUserAccount();
+              // Redirect to Login Screen
+              Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (_) => LoginScreen()),(route) => false,);
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
-      return Scaffold(
+    return Scaffold(
+      backgroundColor: Colors.white,
       body: FutureBuilder<Map<String, dynamic>?>(
-        // Point directly to your service
         future: _userService.getProfile(),
         builder: (context, snapshot) {
-          // 1. Show loading spinner while waiting for Supabase
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // 2. Extract data (Fallbacks included)
           final profileData = snapshot.data;
           final String username = profileData?['username'] ?? "No Name Set";
           final String? avatarUrl = profileData?['profilepic'];
           final String userEmail = _userService.email;
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.symmetric(vertical: 20),
             child: Column(
               children: [
-                // Profile Picture (Updates dynamically)
                 CircleAvatar(
                   radius: 60,
                   backgroundColor: const Color(0xFFFF7643),
@@ -47,8 +67,6 @@ class _ProfileTabState extends State<ProfileTab> {
                       : null,
                 ),
                 const SizedBox(height: 15),
-
-                // Username & Email
                 Text(
                   username,
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
@@ -57,101 +75,96 @@ class _ProfileTabState extends State<ProfileTab> {
                   userEmail,
                   style: const TextStyle(fontSize: 16, color: Colors.grey),
                 ),
-                const SizedBox(height: 20),
-
-                // Action Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          final updated = await Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const EditProfileScreen()),
-                          );
-                          // Rebuilds the FutureBuilder to fetch new data
-                          if (updated == true) setState(() {});
-                        },
-                        icon: const Icon(Icons.edit),
-                        label: const Text('Edit Profile'),
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.logout, color: Colors.white),
-                        label: const Text('Logout'),
-                        onPressed: () => signOut(context),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 30),
+                
+                ProfileMenu(
+                  text: "Edit Profile",
+                  icon: Icons.person_outline, 
+                  press: () async {
+                    final updated = await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+                    );
+                    if (updated == true) 
+                    {                       
+                      setState(() {});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Profile updated successfully!"))
+                      );
+                    }
+ 
+                  },
                 ),
-            const Divider(height: 40),
 
-            // Action Buttons (Cars & Family)
-            Row(
-              children: [
-                Expanded(
-                  child: _buildActionButton(
-                    icon: Icons.directions_car,
-                    label: 'Cars',
-                    color: Colors.blueAccent,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => CarScreen()),
-                      );},
-                  ),
+                ProfileMenu(
+                  text: "Cars",
+                  icon: Icons.directions_car_filled_outlined,
+                  press: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CarScreen())),
                 ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: _buildActionButton(
-                    icon: Icons.family_restroom,
-                    label: 'Family',
-                    color: Colors.greenAccent.shade700,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => FamilyScreen()),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+
+                ProfileMenu(
+                  text: "Family",
+                  icon: Icons.group_outlined,
+                  press: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FamilyScreen())),
+                ),
+
+                ProfileMenu(
+                  text: "Delete Account",
+                  icon: Icons.delete,
+                  press: () => _showDeleteDialog(context),
+                ),
+
+                ProfileMenu(
+                  text: "Log Out",
+                  icon: Icons.logout,
+                  press: () => signOut(context),
                 ),
               ],
             ),
-          ); // End of SingleChildScrollView
+          );
         },
-      ), 
-    ); // End of Scaffold
+      ),
+    );
   }
+}
+class ProfileMenu extends StatelessWidget {
+  const ProfileMenu({
+    super.key,
+    required this.text,
+    required this.icon,
+    this.press,
+  });
 
-  // Helper method to keep the code DRY (Don't Repeat Yourself)
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: color),
+  final String text;
+  final IconData icon;
+  final VoidCallback? press;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: TextButton(
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.all(20),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          backgroundColor: const Color(0xFFF5F6F9),
         ),
-        child: Column(
+        onPressed: press,
+        child: Row(
           children: [
-            Icon(icon, size: 30, color: color),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(fontWeight: FontWeight.bold, color: color),
+            Icon(
+              icon,
+              color: const Color(0xFFFF7643),
+              size: 24,
             ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(color: Color(0xFF757575), fontSize: 16),
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Color(0xFF757575), size: 16),
           ],
         ),
       ),
