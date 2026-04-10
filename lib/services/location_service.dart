@@ -3,15 +3,17 @@ import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
+/// Provides user location information and events.
 class LocationService extends ChangeNotifier {
   static const _locationSettings = LocationSettings(
     accuracy: LocationAccuracy.high,
   );
 
-  Position? _location;
+  Position? _location, _prevLocation;
   String _statusMessage = '';
   StreamSubscription<Position>? _locationStream;
   StreamSubscription<ServiceStatus>? _locationStatusStream;
+  final _locationAvailableStream = StreamController<bool>.broadcast();
 
   /// Tracks the location of the user, or [null] if location is not available
   /// (location is disabled, no permissions, other errors, etc.).
@@ -19,8 +21,17 @@ class LocationService extends ChangeNotifier {
       ? LatLng(_location!.latitude, _location!.longitude)
       : null;
 
+  /// Stream that notifies when location services become available/unavailable.
+  Stream<bool> get locationAvailableStream => _locationAvailableStream.stream;
+
   /// Relevant location debug messages.
   String get statusMessage => _statusMessage;
+
+  @override
+  void dispose() {
+    _locationAvailableStream.close();
+    super.dispose();
+  }
 
   Future<bool> requestPermissions() async {
     var permission = await Geolocator.checkPermission();
@@ -60,13 +71,17 @@ class LocationService extends ChangeNotifier {
         locationSettings: _locationSettings,
       );
       _setLocation(location);
+      notifyListeners();
     }
 
     await _locationStream?.cancel();
     _locationStream = Geolocator
         .getPositionStream(locationSettings: _locationSettings)
         .listen(
-          _setLocation,
+          (location) {
+            _setLocation(location);
+            notifyListeners();
+          },
           onError: (error) {
             _statusMessage = 'Unable to track location: $error';
             notifyListeners();
@@ -77,24 +92,45 @@ class LocationService extends ChangeNotifier {
     _locationStatusStream = Geolocator
         .getServiceStatusStream()
         .listen(
-          (status) async {
-            if (status == ServiceStatus.disabled) {
-              _setLocation(null);
-            } else {
-              final location = await Geolocator.getCurrentPosition(
-                locationSettings: _locationSettings,
-              );
-              _setLocation(location);
-            }
+          (status) {
+            _setStatus(status);
+            notifyListeners();
+          },
+          onError: (error) {
+            _statusMessage = 'Unable to get location service status: $error';
+            notifyListeners();
           },
         );
   }
 
-  void _setLocation(Position? location, {String? statusMessage}) {
+  Future<void> _setStatus(ServiceStatus status) async {
+    if (status == ServiceStatus.disabled) {
+      _setLocation(null);
+      notifyListeners();
+
+    } else {
+      final location = await Geolocator.getCurrentPosition(
+        locationSettings: _locationSettings,
+      );
+      _setLocation(location);
+      _statusMessage = 'Location enabled.';
+      notifyListeners();
+    }
+  }
+
+  void _setLocation(Position? location) {
     _location = location;
     _statusMessage = location != null
         ? 'Location updated.'
         : 'Location disabled.';
-    notifyListeners();
+
+    if (_prevLocation == null && location != null) {
+      _locationAvailableStream.add(true);
+      _prevLocation = location;
+
+    } else if (_prevLocation != null && location == null) {
+      _locationAvailableStream.add(false);
+      _prevLocation = location;
+    }
   }
 }

@@ -34,29 +34,32 @@ class _MapWithSheetState extends State<MapWithSheet> {
   final _mapController = MapController();
   final _whenMapReady = Completer<void>();
 
+  StreamSubscription? _locationEnabledStream;
+
   @override
   void initState() {
     super.initState();
-    widget.mapTabController.locationEnableCallback = (location) async {
-      await _whenMapReady.future;
-      unawaited(_setInitialPosition());
-    };
+    _locationEnabledStream = widget.mapTabController.locationEnabledStream
+        .where((isEnabled) => isEnabled)
+        .listen(_onLocationEnabled);
   }
 
-  Future<void> _setInitialPosition() async {
+  @override
+  void dispose() {
+    _locationEnabledStream?.cancel();
+    _sheetController.dispose();
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onLocationEnabled(bool isEnabled) async {
     await _whenMapReady.future;
     final selected = widget.mapTabController.selectedCarpark;
     final userLocation = widget.mapTabController.currentLocation;
 
     final pos = selected?.position ?? widget.initialPosition ?? userLocation;
     if (pos != null) _mapController.move(pos, CarparkMap.defaultZoom);
-  }
-
-  @override
-  void dispose() {
-    _sheetController.dispose();
-   _mapController.dispose();
-    super.dispose();
+    debugPrint('pos is $pos');
   }
 
   void _onMapReady() {

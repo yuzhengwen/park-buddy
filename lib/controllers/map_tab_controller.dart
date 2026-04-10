@@ -35,15 +35,14 @@ class MapTabController extends ChangeNotifier {
   String _searchText = '';
   String? _selectedCarparkNo;
   Carpark? _selectedCarpark;
-  LatLng? _currentLocation;
   LatLng? _searchCenter;
   String? _searchCenterLabel;
   bool _isUsingTextFallback = false;
-  void Function(LatLng)? _locationEnableCallback;
 
   // ── Getters ──────────────────────────────────────────────────────────────
 
-  LatLng? get currentLocation => _currentLocation;
+  LatLng? get currentLocation => _locationService.currentLocation;
+  Stream<bool> get locationEnabledStream => _locationService.locationAvailableStream;
   List<Carpark> get allCarparks => _allCarparks;
   List<Carpark> get visibleCarparks => _visibleCarparks;
   String get statusMessage => _statusMessage;
@@ -57,14 +56,11 @@ class MapTabController extends ChangeNotifier {
   LatLng? get searchCenter => _searchCenter;
   String? get searchCenterLabel => _searchCenterLabel;
   bool get isUsingTextFallback => _isUsingTextFallback;
-  
-  set locationEnableCallback(void Function(LatLng)? value) =>
-    _locationEnableCallback = value;
 
   // ── Initialisation ────────────────────────────────────────────────────────
 
   Future<void> initialize() async {
-    _locationService.addListener(_handleLocationUpdate);
+    _locationService.addListener(_onLocationServiceChanged);
     await Future.wait([loadCarparkData(), _locationService.startLiveLocation()]);
     refreshVisibleCarparks();
     _startAvailabilityRefresh();
@@ -133,12 +129,7 @@ class MapTabController extends ChangeNotifier {
 
   // ── Location ──────────────────────────────────────────────────────────────
 
-  void _handleLocationUpdate() {
-    final newLocation = _locationService.currentLocation;
-    if (_currentLocation == null && newLocation != null) {
-      _locationEnableCallback?.call(newLocation);
-    }
-    _currentLocation = newLocation;
+  void _onLocationServiceChanged() {
     notifyListeners();
   }
 
@@ -334,7 +325,7 @@ class MapTabController extends ChangeNotifier {
 
   @override
   void dispose() {
-    _locationService.removeListener(_handleLocationUpdate);
+    _locationService.removeListener(_onLocationServiceChanged);
     _availabilityRefreshTimer?.cancel();
     super.dispose();
   }
