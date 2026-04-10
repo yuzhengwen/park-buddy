@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:latlong2/latlong.dart';
 import '../../controllers/parking_session_controller.dart';
-import '../../screens/location_picker/location_picker_screen.dart';
+import '../../UI/carpark_picker_screen.dart';
 import '../../models/carpark.dart';
 
 class SessionEditSection extends StatefulWidget {
@@ -72,25 +72,27 @@ class _SessionEditSectionState extends State<SessionEditSection> {
     }
   }
 
-Future<void> _pickLocation(
-    BuildContext context, ParkingSessionController c) async {
-  final Carpark? result = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => CarparkPickerScreen(
-        initialMapCenter: c.session?.carparkPosition,
+  Future<void> _pickLocation(
+    BuildContext context,
+    ParkingSessionController c,
+  ) async {
+    final Carpark? result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) {
+          return CarparkPickerScreen.fromLocation(c.session?.carparkPosition);
+        },
       ),
-    ),
-  );
-  if (result != null) {
-    setState(() {
-      // Store as "x_coord,y_coord" 
-      _pendingLocation = result.address; 
-      _pendingCarparkName = result.address;
-      _pendingLatLng = result.position;
-    });
+    );
+    if (result != null) {
+      setState(() {
+        // Store as "x_coord,y_coord"
+        _pendingLocation = result.address;
+        _pendingCarparkName = result.address;
+        _pendingLatLng = result.position;
+      });
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {

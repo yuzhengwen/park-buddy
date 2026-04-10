@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:park_buddy/screens/location_picker/location_picker_screen.dart';
+import 'package:park_buddy/UI/carpark_picker_screen.dart';
 import 'package:park_buddy/utils/parking_service.dart';
 import 'package:park_buddy/utils/car_icons.dart';
 import 'package:park_buddy/models/carpark.dart';
@@ -40,7 +40,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
     super.dispose();
   }
 
-  // Check whether all required fields are filled
+  /// Check whether all required fields are filled
   bool _canSubmit() {
     return _selectedLocation != null && _selectedCarPlate != null;
   }
@@ -85,6 +85,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
 
     } catch (e) {
       if (mounted) {
+        debugPrint(e.toString());
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: Could not create session.'))
         );
@@ -100,7 +101,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
       MaterialPageRoute(
         builder: (context) {
           return CarparkPickerScreen(
-            initialMapCenter: _selectedLocation?.position,
+            initialCarpark: _selectedLocation,
           );
         },
       ),
@@ -282,7 +283,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
                       scrollDirection: Axis.horizontal,
                       padding: EdgeInsets.all(8),
                       itemCount: _parkingPictures.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (context, index) => ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.file(
