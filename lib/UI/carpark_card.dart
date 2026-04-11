@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:park_buddy/models/carpark.dart';
+import 'package:park_buddy/utils/math_utils.dart';
 
 class CarparkCard extends StatelessWidget {
   final void Function(Carpark carpark)? onItemSelect;
@@ -18,7 +19,7 @@ class CarparkCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final carparkNo = 'Car park: ${carpark.carParkNo}';
     final distanceKm = userLocation != null
-        ? ' • ${Distance().as(LengthUnit.Kilometer, userLocation!, carpark.position).toStringAsFixed(2)} km'
+        ? ' • ${MathUtils.distanceKm(userLocation!, carpark.position).toStringAsFixed(2)} km'
         : '';
     final lotsLabel = carpark.availability != null && carpark.availability!.lotsAvailable == 1
         ? 'lot'
