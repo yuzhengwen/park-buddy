@@ -28,7 +28,7 @@ class CarValidationController {
     final cleanPlate = value.trim().toUpperCase();
     
     if (!plateRegex.hasMatch(cleanPlate)) {
-      return 'Enter a valid license plate';
+      return 'Enter a valid license plate e.g. SBA1234A';
     }
     
     return null;

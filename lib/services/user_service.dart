@@ -105,4 +105,23 @@ class UserService {
         throw Exception("Failed to upload image to storage via StorageService.");
       }
     }
+    Future<String> getOwnernameByUserId(String userId) async {
+        try {
+          final data = await _supabase
+              .from('users')
+              .select('username')
+              .eq('userid', userId)
+              .single();
+
+          return data['username'] ?? "Unknown User";
+        } catch (e) {
+          // If user isn't found or there's an error
+          return "Family Member";
+        }
+      }
+
+    bool isCurrentUser(String? idToCompare) {
+      if (idToCompare == null || userId.isEmpty) return false;
+      return userId == idToCompare;
+    }
 }

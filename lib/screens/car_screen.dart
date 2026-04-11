@@ -3,6 +3,7 @@ import '../utils/parking_service.dart';
 import '../UI/CarCard.dart';
 import 'modify_car_screen.dart';
 import '../services/car_service.dart';
+import '../services/user_service.dart';
 class CarScreen extends StatefulWidget {
   const CarScreen({super.key});
 
@@ -13,6 +14,7 @@ class CarScreen extends StatefulWidget {
 class _CarScreenState extends State<CarScreen> {
   final _parkingService = ParkingService();
   final _carService = CarService();
+  final _userService = UserService();
   List<Map<String, dynamic>> cars = [];
   bool isLoading = true;
 
@@ -100,6 +102,7 @@ class _CarScreenState extends State<CarScreen> {
                   return CarCard(
                     car: cars[index],
                     parkingService: _parkingService,
+                    userService: _userService,
                     showIcons: false,
                     canExpand: false,
                     onEdit: () async {
