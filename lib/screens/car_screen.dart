@@ -63,7 +63,9 @@ class _CarScreenState extends State<CarScreen> {
           children: [
             const Divider(),
             if (isLoading)
-              const Center(child: CircularProgressIndicator())
+            SizedBox(
+                height: MediaQuery.of(context).size.height - 150, 
+                child: const Center(child: CircularProgressIndicator(color: Color(0xFFFF7643)),),)
             else if (cars.isEmpty)
               Container(
                 height: MediaQuery.of(context).size.height * 0.6, 

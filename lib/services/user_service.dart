@@ -5,6 +5,7 @@ import 'storage_service.dart';
 class UserService {
   final _supabase = Supabase.instance.client;
   final _storageService = StorageService();
+  final Map<String, String> _nameCache = {};
   // 1. Get current user object
   User? get currentUser => _supabase.auth.currentUser;
 
@@ -106,13 +107,16 @@ class UserService {
       }
     }
     Future<String> getOwnernameByUserId(String userId) async {
+        if (_nameCache.containsKey(userId)) {
+            return _nameCache[userId]!;
+          }
         try {
           final data = await _supabase
               .from('users')
               .select('username')
               .eq('userid', userId)
               .single();
-
+          _nameCache[userId] = data['username'];
           return data['username'] ?? "Unknown User";
         } catch (e) {
           // If user isn't found or there's an error
