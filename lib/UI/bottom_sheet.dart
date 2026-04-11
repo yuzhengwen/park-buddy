@@ -111,7 +111,7 @@ class _SheetHeader extends StatelessWidget {
               width: 32,
               height: 4,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.outlineVariant,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
