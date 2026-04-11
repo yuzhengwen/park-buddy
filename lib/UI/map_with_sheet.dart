@@ -220,9 +220,11 @@ class _Content extends StatelessWidget {
       animation: sheetController,
       builder: (context, child) {
         final size = sheetController.isAttached ? sheetController.size : 0.25;
-        final height = ((1 - size) * parentHeight + 28.0).clamp(100.0, parentHeight);
 
-        return SizedBox(height: height, child: child);
+        return Transform.translate(
+          offset: Offset(0.0, -size * parentHeight / 2.0),
+          child: child,
+        );
       },
       child: child,
     );
