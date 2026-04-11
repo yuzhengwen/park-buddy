@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/screens/start_parking_session_screen.dart';
 import 'package:park_buddy/controllers/map_tab_controller.dart';
 import 'package:park_buddy/UI/map_search_bar.dart';
@@ -60,6 +61,11 @@ class _MapTabState extends State<MapTab> {
     );
   }
 
+  void _onTapListItem(Carpark carpark) {
+    _controller.selectCarpark(carpark);
+    _startParkingSession();
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
@@ -67,6 +73,7 @@ class _MapTabState extends State<MapTab> {
     return MapWithSheet(
       sheetTitle: 'Nearest HDB Car Parks',
       mapTabController: _controller,
+      onTapListItem: _onTapListItem,
       floatingActionButton: FloatingActionButton.extended(
         label: const Text('Park Now'),
         icon: const Icon(Icons.local_parking),

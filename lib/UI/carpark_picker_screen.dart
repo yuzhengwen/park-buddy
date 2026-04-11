@@ -54,6 +54,10 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Select Carpark')),
       body: MapWithSheet(
+        onTapListItem: (carpark) {
+          _controller.selectCarpark(carpark);
+          _onConfirm();
+        },
         initialPosition: widget.initialCarpark == null
             ? widget.initialLocation
             : null,

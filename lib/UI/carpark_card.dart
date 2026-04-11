@@ -21,47 +21,71 @@ class CarparkCard extends StatelessWidget {
     final distanceKm = userLocation != null
         ? ' • ${MathUtils.distanceKm(userLocation!, carpark.position).toStringAsFixed(2)} km'
         : '';
-    final lotsLabel = carpark.availability != null && carpark.availability!.lotsAvailable == 1
-        ? 'lot'
-        : 'lots';
-    final numLots = carpark.availability != null
-        ? '${carpark.availability!.lotsAvailable}\n$lotsLabel'
-        : 'n/a';
+    late final List<Text> lots;
+    if (carpark.availability != null) {
+      lots = [
+        Text(
+          '${carpark.availability!.lotsAvailable}',
+          style: Theme.of(context).textTheme.titleLarge,
+          textAlign: .center,
+        ),
+        Text(
+          carpark.availability!.lotsAvailable == 1 ? 'lot': 'lots',
+          style: Theme.of(context).textTheme.titleSmall,
+          textAlign: .center,
+        ),
+      ];
+    } else {
+      lots = [
+        Text(
+          'n/a',
+          style: Theme.of(context).textTheme.titleLarge,
+          textAlign: .center,
+        ),
+      ];
+    }
 
     return Card.outlined(
       clipBehavior: Clip.hardEdge,
-      child: InkWell(
-        onTap: () => onItemSelect?.call(carpark),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            spacing: 16,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: .start,
-                  children: [
-                    Text(
-                      carpark.address,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text('$carparkNo $distanceKm'),
-                    Text('${carpark.carParkType} • ${carpark.shortTermParking}',
-                    ),
-                  ],
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              spacing: 16,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: .start,
+                    children: [
+                      Text(
+                        carpark.address,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      Text('$carparkNo $distanceKm'),
+                      Text('${carpark.carParkType} • ${carpark.shortTermParking}',
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              SizedBox(
-                width: 50,
-                child: Text(
-                  numLots,
-                  style: Theme.of(context).textTheme.titleMedium,
-                  textAlign: TextAlign.center,
+                SizedBox(
+                  width: 50,
+                  child: Column(
+                    children: lots,
+                  ),
                 ),
+              ],
+            ),
+            SizedBox(height: 16.0),
+            Align(
+              alignment: .bottomRight,
+              child: FilledButton.tonal(
+                onPressed: () => onItemSelect?.call(carpark),
+                child: Text('Park here')
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

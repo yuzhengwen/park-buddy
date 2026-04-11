@@ -15,6 +15,7 @@ class MapWithSheet extends StatefulWidget {
   final Widget? floatingActionButton;
   final Widget? searchBar;
   final LatLng? initialPosition;
+  final void Function(Carpark)? onTapListItem;
 
   const MapWithSheet({
     super.key,
@@ -23,6 +24,7 @@ class MapWithSheet extends StatefulWidget {
     this.floatingActionButton,
     this.searchBar,
     this.initialPosition,
+    this.onTapListItem,
   });
 
   @override
@@ -68,18 +70,6 @@ class _MapWithSheetState extends State<MapWithSheet> {
     }
   }
 
-  void _closeSheet(
-    ScrollController scrollController,
-    DraggableScrollableController sheetController,
-  ) {
-    scrollController.jumpTo(0);
-    sheetController.animateTo(
-      0.25,
-      duration: Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-    );
-  }
-
   void _recenterOnUser() {
     widget.mapTabController.unselectCarpark();
     final userLocation = widget.mapTabController.currentLocation;
@@ -91,15 +81,6 @@ class _MapWithSheetState extends State<MapWithSheet> {
   void _onTapMarker(Carpark carpark) {
     widget.mapTabController.selectCarpark(carpark);
     _mapController.move(carpark.position, CarparkMap.defaultZoom);
-  }
-
-  void _onTapListItem(
-    ScrollController scrollController,
-    DraggableScrollableController sheetController,
-    Carpark carpark,
-  ) {
-    _closeSheet(scrollController, sheetController);
-    _onTapMarker(carpark);
   }
 
   @override
@@ -139,13 +120,12 @@ class _MapWithSheetState extends State<MapWithSheet> {
                 title: widget.sheetTitle,
                 emptyText: 'No car parks nearby.',
                 itemCount: carparks.length,
-                itemBuilder: (scrollController, context, index) => CarparkCard(
-                  carpark: carparks[index],
-                  userLocation: userLocation,
-                  onItemSelect: (carpark) => _onTapListItem(
-                    scrollController,
-                    _sheetController,
-                    carpark,
+                itemBuilder: (scrollController, context, index) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: CarparkCard(
+                    carpark: carparks[index],
+                    userLocation: userLocation,
+                    onItemSelect: (carpark) => widget.onTapListItem?.call(carpark),
                   ),
                 ),
               );
