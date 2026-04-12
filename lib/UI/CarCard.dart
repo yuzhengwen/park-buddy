@@ -19,7 +19,19 @@ class CarCard extends StatefulWidget {
 class _CarCardState extends State<CarCard> {
   List<Map<String, dynamic>> sessions = [];
   bool isExpanded = false;
-  bool isLoading = false;
+bool isLoading = false;
+bool isParked = false;
+
+@override
+void initState() {
+    super.initState();
+    _checkParkedStatus();
+  }
+
+Future<void> _checkParkedStatus() async {
+    final parked = await widget.parkingService.hasActiveSession(widget.car['carplate']);
+    setState(() => isParked = parked);
+  }
 
   Future<void> _loadSessions() async {
     setState(() => isLoading = true);
@@ -110,15 +122,15 @@ class _CarCardState extends State<CarCard> {
                 Text(widget.car['carplate'] ?? ''),
                 SizedBox(height: 4),
                 Row(
-                  children: [
-                    Icon(Icons.circle, size: 10, color: Colors.orange),
-                    SizedBox(width: 4),
-                    Text('Parked',
-                        style: TextStyle(
-                            color: Colors.orange,
-                            fontWeight: FontWeight.bold)),
-                  ],
-                ),
+  children: [
+    Icon(Icons.circle, size: 10, color: isParked ? Colors.orange : Colors.green),
+    SizedBox(width: 4),
+    Text(isParked ? 'Parked' : 'Available',
+        style: TextStyle(
+            color: isParked ? Colors.orange : Colors.green,
+            fontWeight: FontWeight.bold)),
+  ],
+),
               ],
             ),
             trailing: widget.canExpand ? IconButton(

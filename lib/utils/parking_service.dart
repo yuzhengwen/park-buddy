@@ -34,4 +34,13 @@ class ParkingService {
         .limit(3);
     return List<Map<String, dynamic>>.from(response);
   }
+  Future<bool> hasActiveSession(String carplate) async {
+    final response = await _supabase
+        .from('parkingsession')
+        .select()
+        .eq('carplate', carplate)
+        .isFilter('parkingendtime', null)
+        .limit(1);
+    return (response as List).isNotEmpty;
+  }
 }
