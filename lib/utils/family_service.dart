@@ -1,7 +1,12 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FamilyService {
-  final supabase = Supabase.instance.client;
+  //final supabase = Supabase.instance.client;
+  final SupabaseClient supabase;
+
+  FamilyService([SupabaseClient? client])
+      : supabase = client ?? Supabase.instance.client;
+      
   Future<void> updateFamilyName(String joinCode, String newName) async {
     await supabase
         .from('family')
