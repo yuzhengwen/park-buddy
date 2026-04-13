@@ -33,11 +33,9 @@ class MapTabController extends ChangeNotifier {
   bool _isSearchingLocation = false;
   double _radiusKm = defaultRadiusKm;
   String _searchText = '';
-  String? _selectedCarparkNo;
   Carpark? _selectedCarpark;
   LatLng? _searchCenter;
   String? _searchCenterLabel;
-  bool _isUsingTextFallback = false;
 
   // ── Getters ──────────────────────────────────────────────────────────────
 
@@ -51,11 +49,23 @@ class MapTabController extends ChangeNotifier {
   bool get isSearchingLocation => _isSearchingLocation;
   double get radiusKm => _radiusKm;
   String get searchText => _searchText;
-  String? get selectedCarparkNo => _selectedCarparkNo;
   Carpark? get selectedCarpark => _selectedCarpark;
   LatLng? get searchCenter => _searchCenter;
   String? get searchCenterLabel => _searchCenterLabel;
-  bool get isUsingTextFallback => _isUsingTextFallback;
+
+  Carpark? get nearestCarpark {
+    if (currentLocation == null) return null;
+    Carpark? nearest;
+    double nearestDistance = .infinity;
+    for (final carpark in _allCarparks) {
+      final distance = MathUtils.distanceKm(currentLocation!, carpark.position);
+      if (distance < nearestDistance) {
+        nearest = carpark;
+        nearestDistance = distance;
+      }
+    }
+    return nearest;
+  }
 
   // ── Initialisation ────────────────────────────────────────────────────────
 
@@ -140,7 +150,6 @@ class MapTabController extends ChangeNotifier {
       _searchText = '';
       _searchCenter = null;
       _searchCenterLabel = null;
-      _isUsingTextFallback = false;
       notifyListeners();
       refreshVisibleCarparks();
       return;
@@ -166,7 +175,6 @@ class MapTabController extends ChangeNotifier {
     if (searchQuery.isEmpty) {
       _searchCenter = null;
       _searchCenterLabel = null;
-      _isUsingTextFallback = false;
       notifyListeners();
       refreshVisibleCarparks();
       return;
@@ -182,20 +190,17 @@ class MapTabController extends ChangeNotifier {
       if (searchResult != null) {
         _searchCenter = searchResult.position;
         _searchCenterLabel = searchResult.label;
-        _isUsingTextFallback = false;
         _statusMessage = 'Showing car parks near ${searchResult.label}.';
         onMoveMap();
       } else {
         _searchCenter = null;
         _searchCenterLabel = null;
-        _isUsingTextFallback = true;
         _statusMessage =
             'No location match found. Showing car parks matching the text instead.';
       }
     } catch (_) {
       _searchCenter = null;
       _searchCenterLabel = null;
-      _isUsingTextFallback = true;
       _statusMessage =
           'Location search is unavailable right now. Showing text matches instead.';
     } finally {
@@ -242,7 +247,7 @@ class MapTabController extends ChangeNotifier {
     final origin = _searchCenter ?? _locationService.currentLocation;
 
     final filtered = _allCarparks.where((carpark) {
-      if (_isUsingTextFallback && _searchText.isNotEmpty) {
+      if (_searchText.isNotEmpty) {
         final matchesSearch =
             carpark.address.toLowerCase().contains(_searchText) ||
             carpark.carParkNo.toLowerCase().contains(_searchText);
@@ -251,7 +256,7 @@ class MapTabController extends ChangeNotifier {
 
       if (origin == null) {
         // Don't show carpark if no location available and no search performed
-        return _isUsingTextFallback || _searchText.isNotEmpty;
+        return _searchText.isNotEmpty;
       }
 
       return MathUtils.distanceKm(origin, carpark.position) <= _radiusKm;
@@ -259,19 +264,22 @@ class MapTabController extends ChangeNotifier {
 
     if (origin != null) {
       filtered.sort(
-        (a, b) => MathUtils.distanceKm(
-          origin,
-          a.position,
-        ).compareTo(MathUtils.distanceKm(origin, b.position)),
+        (a, b) {
+          final da = MathUtils.distanceKm(origin, a.position);
+          final db = MathUtils.distanceKm(origin, b.position);
+          return da.compareTo(db);
+        },
       );
     } else {
       filtered.sort((a, b) => a.address.compareTo(b.address));
     }
 
     _visibleCarparks = filtered;
-    if (_selectedCarparkNo != null &&
-        !_visibleCarparks.any((c) => c.carParkNo == _selectedCarparkNo)) {
-      _selectedCarparkNo = null;
+    if (
+        _selectedCarpark != null &&
+        !_visibleCarparks.any((c) => c == _selectedCarpark)
+    ) {
+      _selectedCarpark = null;
     }
 
     notifyListeners();
@@ -281,44 +289,12 @@ class MapTabController extends ChangeNotifier {
 
   void selectCarpark(Carpark carpark) {
     _selectedCarpark = carpark;
-    _selectedCarparkNo = carpark.carParkNo;
     notifyListeners();
   }
 
   void unselectCarpark() {
     _selectedCarpark = null;
-    _selectedCarparkNo = null;
     notifyListeners();
-  }
-
-  // ── Utility ───────────────────────────────────────────────────────────────
-  Carpark? getNearestCarpark(LatLng position) {
-    Carpark? nearest;
-    double nearestDistance = double.infinity;
-    for (final carpark in _allCarparks) {
-      final distance = MathUtils.distanceKm(position, carpark.position);
-      if (distance < nearestDistance) {
-        nearest = carpark;
-        nearestDistance = distance;
-      }
-    }
-    return nearest;
-  }
-
-  Carpark? getSelectedOrNearestCarpark() {
-    if (_selectedCarparkNo != null) {
-      try {
-        return _allCarparks.firstWhere(
-          (carpark) => carpark.carParkNo == _selectedCarparkNo,
-        );
-      } on StateError { /* fall through */ }
-    }
-
-    if (_locationService.currentLocation != null) {
-      return getNearestCarpark(_locationService.currentLocation!);
-    }
-
-    return null;
   }
 
   // ── Disposal ──────────────────────────────────────────────────────────────
@@ -326,6 +302,7 @@ class MapTabController extends ChangeNotifier {
   @override
   void dispose() {
     _locationService.removeListener(_onLocationServiceChanged);
+    _locationService.dispose();
     _availabilityRefreshTimer?.cancel();
     super.dispose();
   }

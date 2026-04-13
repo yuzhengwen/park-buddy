@@ -73,7 +73,7 @@ class _MapTabState extends State<MapTab> {
       floatingActionButton: FloatingActionButton.extended(
         label: const Text('Park Now'),
         icon: const Icon(Icons.local_parking),
-        onPressed: () => _startParkingSession(null),
+        onPressed: () => _startParkingSession(_controller.nearestCarpark),
       ),
       searchBar: SafeArea(
         bottom: false,
