@@ -50,20 +50,15 @@ class _MapTabState extends State<MapTab> {
     );
   }
 
-  void _startParkingSession() {
+  void _startParkingSession(Carpark? carpark) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => StartParkingSessionScreen(
-          initialCarpark: _controller.getSelectedOrNearestCarpark(),
+          initialCarpark: carpark,
         ),
       ),
     );
-  }
-
-  void _onTapListItem(Carpark carpark) {
-    _controller.selectCarpark(carpark);
-    _startParkingSession();
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -73,11 +68,12 @@ class _MapTabState extends State<MapTab> {
     return MapWithSheet(
       sheetTitle: 'Nearest HDB Car Parks',
       mapTabController: _controller,
-      onTapListItem: _onTapListItem,
+      onConfirmCarpark: _startParkingSession,
+      confirmCarparkText: 'Park here',
       floatingActionButton: FloatingActionButton.extended(
         label: const Text('Park Now'),
         icon: const Icon(Icons.local_parking),
-        onPressed: _startParkingSession,
+        onPressed: () => _startParkingSession(null),
       ),
       searchBar: SafeArea(
         bottom: false,

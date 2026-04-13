@@ -79,9 +79,9 @@ class _SessionEditSectionState extends State<SessionEditSection> {
     final Carpark? result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) {
-          return CarparkPickerScreen.fromLocation(c.session?.carparkPosition);
-        },
+        builder: (_) => CarparkPickerScreen(
+          initialLocation: c.session?.carparkPosition
+        ),
       ),
     );
     if (result != null) {
