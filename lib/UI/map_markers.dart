@@ -79,36 +79,39 @@ class MapMarkers {
       height: 60,
       child: GestureDetector(
         onTap: () => onTap?.call(data),
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: background,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 8,
-                  offset: Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              spacing: 2,
-              children: [
-                Text(
-                  blockLabel,
-                  style: blockLabelText,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  lotsAvailable != null ? '$lotsAvailable' : 'Unknown',
-                  style: lotsAvailableText,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+        child: Transform.scale(
+          scale: isSelected ? 1.25 : 1.0,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: background,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 8,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 2,
+                children: [
+                  Text(
+                    blockLabel,
+                    style: blockLabelText,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    lotsAvailable != null ? '$lotsAvailable' : 'Unknown',
+                    style: lotsAvailableText,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
