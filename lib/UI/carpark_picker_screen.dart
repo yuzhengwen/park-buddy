@@ -37,7 +37,15 @@ class _CarparkPickerScreenState extends State<CarparkPickerScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Select Carpark')),
       body: MapWithSheet(
-        onConfirmCarpark: (carpark) => Navigator.of(context).pop(carpark),
+        onConfirmCarpark: (carpark) {
+          final currentRoute = ModalRoute.of(context);
+
+          Navigator.of(context)
+            .popUntilWithResult(
+              (route) => route != currentRoute,
+              carpark,
+            );
+        },
         initialPosition: widget.initialLocation,
         mapTabController: _controller,
       ),

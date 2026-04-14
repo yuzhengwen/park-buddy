@@ -1,13 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:park_buddy/UI/map_search_bar.dart';
 import 'package:park_buddy/UI/page_with_sheet.dart';
 import 'package:park_buddy/controllers/map_tab_controller.dart';
 import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/UI/bottom_sheet.dart';
 import 'package:park_buddy/UI/map.dart';
 import 'package:park_buddy/UI/carpark_list_item.dart';
+import 'package:park_buddy/services/location_search_service.dart';
 import 'package:park_buddy/utils/math_utils.dart';
 
 /// Layout of a map with a draggable sheet of locations.
@@ -15,7 +17,6 @@ class MapWithSheet extends StatefulWidget {
   final MapTabController mapTabController;
   final String? sheetTitle;
   final Widget? floatingActionButton;
-  final Widget? searchBar;
   final LatLng? initialPosition;
   final String confirmCarparkText;
   final void Function(Carpark)? onConfirmCarpark;
@@ -25,7 +26,6 @@ class MapWithSheet extends StatefulWidget {
     required this.mapTabController,
     this.sheetTitle,
     this.floatingActionButton,
-    this.searchBar,
     this.initialPosition,
     this.confirmCarparkText = 'Confirm',
     this.onConfirmCarpark,
@@ -35,9 +35,10 @@ class MapWithSheet extends StatefulWidget {
   State<MapWithSheet> createState() => _MapWithSheetState();
 }
 
-class _MapWithSheetState extends State<MapWithSheet> {
+class _MapWithSheetState extends State<MapWithSheet> with TickerProviderStateMixin {
   final _sheetController = DraggableScrollableController();
-  final _mapController = MapController();
+  late final _mapController = AnimatedMapController(vsync: this);
+  final _searchController = SearchController();
   final _whenMapReady = Completer<void>();
 
   StreamSubscription? _locationEnabledStream;
@@ -47,9 +48,12 @@ class _MapWithSheetState extends State<MapWithSheet> {
   @override
   void initState() {
     super.initState();
-    _locationEnabledStream = widget.mapTabController.locationEnabledStream
+    _locationEnabledStream = widget.mapTabController.location.locationAvailableStream
         .where((isEnabled) => isEnabled)
         .listen(_onLocationEnabled);
+    if (widget.initialPosition != null) {
+      widget.mapTabController.visibleCarparksCentre = widget.initialPosition;
+    }
   }
 
   @override
@@ -57,17 +61,17 @@ class _MapWithSheetState extends State<MapWithSheet> {
     _locationEnabledStream?.cancel();
     _sheetController.dispose();
     _mapController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   Future<void> _onLocationEnabled(bool isEnabled) async {
     await _whenMapReady.future;
     final selected = widget.mapTabController.selectedCarpark;
-    final userLocation = widget.mapTabController.currentLocation;
+    final userLocation = widget.mapTabController.location.currentLocation;
 
     final pos = selected?.position ?? widget.initialPosition ?? userLocation;
-    if (pos != null) _mapController.move(pos, CarparkMap.defaultZoom);
-    debugPrint('pos is $pos');
+    if (pos != null) _mapController.animateTo(dest: pos);
   }
 
   void _onMapReady() {
@@ -76,27 +80,50 @@ class _MapWithSheetState extends State<MapWithSheet> {
     }
   }
 
+  void _onSearchDone(String text) {
+  if (!_searchController.isAttached) return;
+
+  if (_searchController.text.isEmpty) _onSearchClear();
+}
+
+  void _onSearchClear() {
+    if (!_searchController.isAttached) return;
+
+    _searchController.clear();
+    widget.mapTabController.visibleCarparksCentre = null;
+  }
+
+  void _onSelectSearchResult(SearchResult res) {
+    widget.mapTabController.visibleCarparksCentre = res.position;
+    _mapController.animateTo(dest: res.position);
+    _searchController.closeView(null);
+  }
+
   void _recenterOnUser() {
-    final userLocation = widget.mapTabController.currentLocation;
+    final userLocation = widget.mapTabController.location.currentLocation;
+
     if (userLocation != null) {
-      _mapController.move(userLocation, CarparkMap.defaultZoom);
+      _mapController.animateTo(dest: userLocation);
     }
   }
 
   void _openCarparkDetails(Carpark carpark) {
+    widget.mapTabController.selectedCarpark = carpark;
+    _mapController.animateTo(dest: carpark.position);
+    _resetSheetSize();
+
+    // Don't recreate LocalHistoryEntry if already present
+    if (_carparkDetailsSubscreen != null) return;
+
     _carparkDetailsSubscreen = LocalHistoryEntry(
       onRemove: _closeCarparkDetails,
     );
     ModalRoute.of(context)?.addLocalHistoryEntry(_carparkDetailsSubscreen!);
-
-    widget.mapTabController.selectCarpark(carpark);
-    _mapController.move(carpark.position, CarparkMap.defaultZoom);
-    _resetSheetSize();
   }
 
   void _closeCarparkDetails() {
     setState(() {
-      widget.mapTabController.unselectCarpark();
+      widget.mapTabController.selectedCarpark = null;
       _carparkDetailsSubscreen = null;
     });
     _resetSheetSize();
@@ -233,13 +260,45 @@ class _MapWithSheetState extends State<MapWithSheet> {
     );
   }
 
+  void _showSliderDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Set range'),
+        content: ListenableBuilder(
+          listenable: widget.mapTabController,
+          builder: (context, child) => Column(
+            mainAxisSize: .min,
+            children: [
+              Text('${widget.mapTabController.radiusKm.toStringAsFixed(2)} km'),
+              Slider(
+                value: widget.mapTabController.radiusKm,
+                min: 0.01,
+                max: 1.00,
+                onChanged: (newValue) {
+                  widget.mapTabController.radiusKm = newValue;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: widget.mapTabController,
       builder: (context, child) {
         final selected = widget.mapTabController.selectedCarpark;
-        final userLocation = widget.mapTabController.currentLocation;
+        final userLocation = widget.mapTabController.location.currentLocation;
         final carparks = widget.mapTabController.visibleCarparks;
 
         return PageWithSheet(
@@ -248,14 +307,21 @@ class _MapWithSheetState extends State<MapWithSheet> {
               ? _buildMainBottomSheet(carparks, userLocation)
               : _buildDetailsBottomSheet(selected, userLocation),
           floatingButtons: _buildFloatingButtons(selected, userLocation),
-          content: widget.searchBar != null && selected == null
-              ? Positioned(top: 8, left: 8, right: 8, child: widget.searchBar!)
+          content: selected == null
+              ? MapSearchBar(
+                  mapTabController: widget.mapTabController,
+                  searchController: _searchController,
+                  onSearchDone: _onSearchDone,
+                  onTapRangeButton: _showSliderDialog,
+                  onTapSearchClearButton: _onSearchClear,
+                  onTapSearchResult: _onSelectSearchResult,
+                )
               : null,
           background: child,
         );
       },
       child: CarparkMap(
-        mapController: _mapController,
+        mapController: _mapController.mapController,
         mapTabController: widget.mapTabController,
         onTapMarker: _openCarparkDetails,
         onMapReady: _onMapReady,

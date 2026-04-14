@@ -45,10 +45,8 @@ class CarparkMap extends StatelessWidget {
         ListenableBuilder(
           listenable: mapTabController,
           builder: (context, child) {
-            final currentLocation = mapTabController.currentLocation;
+            final currentLocation = mapTabController.location.currentLocation;
             final carparks = mapTabController.visibleCarparks;
-            final searchLocation = mapTabController.searchCenter;
-            final searchLabel = mapTabController.searchCenterLabel ?? '?';
             final selectedCarpark = mapTabController.selectedCarpark;
             final theme = Theme.of(context);
 
@@ -72,16 +70,9 @@ class CarparkMap extends StatelessWidget {
                 if (selectedCarpark != null)
                   MapMarkers.carparkMarker(
                     theme: theme,
-                    data: carparks.firstWhere((carpark) => carpark == selectedCarpark),
+                    data: selectedCarpark,
                     isSelected: true,
                     onTap: onTapMarker,
-                  ),
-
-                if (searchLocation != null)
-                  MapMarkers.searchMarker(
-                    theme: theme,
-                    location: searchLocation,
-                    label: searchLabel,
                   ),
               ],
             );

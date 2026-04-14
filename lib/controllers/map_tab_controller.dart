@@ -1,86 +1,86 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/utils/math_utils.dart';
 import 'package:park_buddy/services/api_controller.dart';
 import 'package:park_buddy/services/location_service.dart';
-
-class LocationSearchResult {
-  const LocationSearchResult({required this.position, required this.label});
-
-  final LatLng position;
-  final String label;
-}
+import 'package:park_buddy/services/location_search_service.dart';
 
 class MapTabController extends ChangeNotifier {
   static const defaultRadiusKm = 1.0;
-  static const _oneMapSearchUrl =
-      'https://www.onemap.gov.sg/api/common/elastic/search';
 
   final _apiController = ApiController();
   final _locationService = LocationService();
+  final _searchService = SearchService();
 
   Timer? _availabilityRefreshTimer;
   List<Carpark> _allCarparks = const [];
-  List<Carpark> _visibleCarparks = const [];
-  String _statusMessage = 'Loading HDB car parks...';
-  String? _loadError;
-  bool _isLoadingCarparks = true;
-  bool _isSearchingLocation = false;
+  Carpark? _nearestCarpark;
+  String _statusMessage = '';
+  bool _isLoadingCarparks = false;
   double _radiusKm = defaultRadiusKm;
-  String _searchText = '';
   Carpark? _selectedCarpark;
   LatLng? _searchCenter;
-  String? _searchCenterLabel;
 
-  // ── Getters ──────────────────────────────────────────────────────────────
-
-  LatLng? get currentLocation => _locationService.currentLocation;
-  Stream<bool> get locationEnabledStream => _locationService.locationAvailableStream;
-  List<Carpark> get allCarparks => _allCarparks;
-  List<Carpark> get visibleCarparks => _visibleCarparks;
+  LocationService get location => _locationService;
+  SearchService get search => _searchService;
+  Carpark? get nearestCarpark => _nearestCarpark;
   String get statusMessage => _statusMessage;
-  String? get loadError => _loadError;
   bool get isLoadingCarparks => _isLoadingCarparks;
-  bool get isSearchingLocation => _isSearchingLocation;
-  double get radiusKm => _radiusKm;
-  String get searchText => _searchText;
-  Carpark? get selectedCarpark => _selectedCarpark;
-  LatLng? get searchCenter => _searchCenter;
-  String? get searchCenterLabel => _searchCenterLabel;
 
-  Carpark? get nearestCarpark {
-    if (currentLocation == null) return null;
-    Carpark? nearest;
-    double nearestDistance = .infinity;
-    for (final carpark in _allCarparks) {
-      final distance = MathUtils.distanceKm(currentLocation!, carpark.position);
-      if (distance < nearestDistance) {
-        nearest = carpark;
-        nearestDistance = distance;
-      }
-    }
-    return nearest;
+  double get radiusKm => _radiusKm;
+
+  set radiusKm(double radiusKm) {
+    _radiusKm = radiusKm;
+    notifyListeners();
   }
 
-  // ── Initialisation ────────────────────────────────────────────────────────
+  Carpark? get selectedCarpark => _selectedCarpark;
+
+  set selectedCarpark(Carpark? carpark) {
+    _selectedCarpark = carpark;
+    notifyListeners();
+  }
+
+  LatLng? get visibleCarparksCentre => _searchCenter;
+
+  set visibleCarparksCentre(LatLng? centre) {
+    _searchCenter = centre;
+    notifyListeners();
+  }
+
+  List<Carpark> get visibleCarparks {
+    final origin = _searchCenter ?? _locationService.currentLocation;
+    if (origin == null) return const [];
+
+    return _allCarparks
+        .where((carpark) =>
+            MathUtils.distanceKm(origin, carpark.position) <= radiusKm,
+        )
+        .toList();
+  }
 
   Future<void> initialize() async {
     _locationService.addListener(_onLocationServiceChanged);
-    await Future.wait([loadCarparkData(), _locationService.startLiveLocation()]);
-    refreshVisibleCarparks();
+    await Future.wait([_loadCarparkData(), _locationService.startLiveLocation()]);
+    if (_locationService.currentLocation != null) _updateNearestCarpark();
     _startAvailabilityRefresh();
+    _searchService.getAllCarparks = () => _allCarparks;
+    notifyListeners();
   }
 
-  // ── Carpark data ──────────────────────────────────────────────────────────
+  @override
+  void dispose() {
+    _locationService.removeListener(_onLocationServiceChanged);
+    _locationService.dispose();
+    _searchService.dispose();
+    _availabilityRefreshTimer?.cancel();
+    super.dispose();
+  }
 
-  Future<void> loadCarparkData() async {
+  Future<void> _loadCarparkData() async {
     _isLoadingCarparks = true;
-    _loadError = null;
     _statusMessage = 'Loading HDB car parks...';
     notifyListeners();
 
@@ -93,22 +93,20 @@ class MapTabController extends ChangeNotifier {
         // Show static car park locations even if live availability is unavailable.
       }
 
-      final merged = locations
-          .map(
-            (carpark) => carpark.copyWith(
-              availability: availabilityMap[carpark.carParkNo],
-            ),
-          )
+      _allCarparks = locations
+          .map((carpark) => carpark.copyWith(
+            availability: availabilityMap[carpark.carParkNo],
+          ))
           .whereType<Carpark>()
           .toList();
 
-      _allCarparks = merged;
-      _isLoadingCarparks = false;
-      _statusMessage = 'Loaded ${merged.length} HDB car parks.';
+      _statusMessage = 'Loaded ${_allCarparks.length} HDB car parks.';
+
     } catch (error) {
+      _statusMessage = 'Unable to load HDB car parks: $error';
+
+    } finally {
       _isLoadingCarparks = false;
-      _loadError = 'Unable to load HDB car parks: $error';
-      _statusMessage = _loadError!;
     }
 
     notifyListeners();
@@ -123,187 +121,46 @@ class MapTabController extends ChangeNotifier {
   }
 
   Future<void> _refreshAvailability() async {
+    _statusMessage = 'Fetching carpark availability...';
+    notifyListeners();
+
     try {
       final availabilityMap = await _apiController.fetchAvailabilityMap();
-      _allCarparks = _allCarparks.map((carpark) {
-        return carpark.copyWith(
-          availability: availabilityMap[carpark.carParkNo],
-        );
-      }).toList();
-      notifyListeners();
-      refreshVisibleCarparks();
+      _allCarparks = _allCarparks
+          .map((carpark) => carpark.copyWith(
+            availability: availabilityMap[carpark.carParkNo],
+          ))
+          .toList();
+      _statusMessage = 'Fetched ${_allCarparks.length} carpark availability data.';
+
     } catch (_) {
       // Keep the last successful availability values if refresh fails.
+      _statusMessage = 'Error fetching carpark availability.';
+
+    } finally {
+      notifyListeners();
     }
   }
-
-  // ── Location ──────────────────────────────────────────────────────────────
 
   void _onLocationServiceChanged() {
+    _updateNearestCarpark();
     notifyListeners();
   }
 
-  // ── Search ────────────────────────────────────────────────────────────────
-
-  void handleSearchChanged(String text) {
-    if (text.trim().isEmpty) {
-      _searchText = '';
-      _searchCenter = null;
-      _searchCenterLabel = null;
-      notifyListeners();
-      refreshVisibleCarparks();
-      return;
-    }
-
-    _searchText = text.trim().toLowerCase();
-    notifyListeners();
-  }
-
-  Future<void> applySearchAndRadius({
-    required String searchQuery,
-    required String radiusText,
-    required VoidCallback onMoveMap,
-  }) async {
-    final radius = double.tryParse(radiusText.trim());
-    if (radius != null && radius > 1.0) {
-      _radiusKm = 1.0;
-      _statusMessage = 'Maximum radius is 1 km. Setting to 1 km.';
-    } else {
-      _radiusKm = (radius == null || radius <= 0) ? defaultRadiusKm : radius;
-    }
-
-    if (searchQuery.isEmpty) {
-      _searchCenter = null;
-      _searchCenterLabel = null;
-      notifyListeners();
-      refreshVisibleCarparks();
-      return;
-    }
-
-    _isSearchingLocation = true;
-    _statusMessage = 'Searching for "$searchQuery"...';
-    notifyListeners();
-
-    try {
-      final searchResult = await _searchLocation(searchQuery);
-
-      if (searchResult != null) {
-        _searchCenter = searchResult.position;
-        _searchCenterLabel = searchResult.label;
-        _statusMessage = 'Showing car parks near ${searchResult.label}.';
-        onMoveMap();
-      } else {
-        _searchCenter = null;
-        _searchCenterLabel = null;
-        _statusMessage =
-            'No location match found. Showing car parks matching the text instead.';
-      }
-    } catch (_) {
-      _searchCenter = null;
-      _searchCenterLabel = null;
-      _statusMessage =
-          'Location search is unavailable right now. Showing text matches instead.';
-    } finally {
-      _isSearchingLocation = false;
-      notifyListeners();
-    }
-
-    refreshVisibleCarparks();
-  }
-
-  Future<LocationSearchResult?> _searchLocation(String query) async {
-    final uri = Uri.parse(_oneMapSearchUrl).replace(
-      queryParameters: {
-        'searchVal': query,
-        'returnGeom': 'Y',
-        'getAddrDetails': 'Y',
-        'pageNum': '1',
-      },
-    );
-
-    final response = await http.get(uri);
-    if (response.statusCode != 200) {
-      throw Exception('Location search failed (${response.statusCode}).');
-    }
-
-    final payload = jsonDecode(response.body) as Map<String, dynamic>;
-    final results = payload['results'] as List<dynamic>? ?? const [];
-    if (results.isEmpty) return null;
-
-    final first = results.first as Map<String, dynamic>;
-    final lat = double.tryParse(first['LATITUDE'] as String? ?? '');
-    final lng = double.tryParse(first['LONGITUDE'] as String? ?? '');
-    if (lat == null || lng == null) return null;
-
-    return LocationSearchResult(
-      position: LatLng(lat, lng),
-      label: query.trim(),
-    );
-  }
-
-  // ── Carpark filtering / sorting ───────────────────────────────────────────
-
-  void refreshVisibleCarparks() {
-    final origin = _searchCenter ?? _locationService.currentLocation;
-
-    final filtered = _allCarparks.where((carpark) {
-      if (_searchText.isNotEmpty) {
-        final matchesSearch =
-            carpark.address.toLowerCase().contains(_searchText) ||
-            carpark.carParkNo.toLowerCase().contains(_searchText);
-        if (!matchesSearch) return false;
-      }
-
-      if (origin == null) {
-        // Don't show carpark if no location available and no search performed
-        return _searchText.isNotEmpty;
-      }
-
-      return MathUtils.distanceKm(origin, carpark.position) <= _radiusKm;
-    }).toList();
-
-    if (origin != null) {
-      filtered.sort(
-        (a, b) {
-          final da = MathUtils.distanceKm(origin, a.position);
-          final db = MathUtils.distanceKm(origin, b.position);
-          return da.compareTo(db);
-        },
+  void _updateNearestCarpark() {
+    if (location.currentLocation == null) return;
+    Carpark? nearest;
+    double nearestDistance = .infinity;
+    for (final carpark in _allCarparks) {
+      final distance = MathUtils.distanceKm(
+        location.currentLocation!,
+        carpark.position,
       );
-    } else {
-      filtered.sort((a, b) => a.address.compareTo(b.address));
+      if (distance < nearestDistance) {
+        nearest = carpark;
+        nearestDistance = distance;
+      }
     }
-
-    _visibleCarparks = filtered;
-    if (
-        _selectedCarpark != null &&
-        !_visibleCarparks.any((c) => c == _selectedCarpark)
-    ) {
-      _selectedCarpark = null;
-    }
-
-    notifyListeners();
-  }
-
-  // ── Map interactions ──────────────────────────────────────────────────────
-
-  void selectCarpark(Carpark carpark) {
-    _selectedCarpark = carpark;
-    notifyListeners();
-  }
-
-  void unselectCarpark() {
-    _selectedCarpark = null;
-    notifyListeners();
-  }
-
-  // ── Disposal ──────────────────────────────────────────────────────────────
-
-  @override
-  void dispose() {
-    _locationService.removeListener(_onLocationServiceChanged);
-    _locationService.dispose();
-    _availabilityRefreshTimer?.cancel();
-    super.dispose();
+    _nearestCarpark = nearest;
   }
 }
