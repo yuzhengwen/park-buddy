@@ -13,7 +13,6 @@ class CarparkMap extends StatelessWidget {
   final LatLng initialMapCenter;
   final double initialMapZoom;
   final MapTabController mapTabController;
-  final void Function(LatLngBounds)? onChangedBounds;
   final void Function(Carpark)? onTapMarker;
   final void Function()? onMapReady;
 
@@ -23,7 +22,6 @@ class CarparkMap extends StatelessWidget {
     this.initialMapCenter = defaultCenter,
     this.initialMapZoom = defaultZoom,
     required this.mapTabController,
-    this.onChangedBounds,
     this.onTapMarker,
     this.onMapReady,
   });
@@ -37,12 +35,6 @@ class CarparkMap extends StatelessWidget {
         initialZoom: initialMapZoom,
         onMapReady: () {
           onMapReady?.call();
-          onChangedBounds?.call(mapController.camera.visibleBounds);
-        },
-        onMapEvent: (event) {
-          if (event is MapEventMoveEnd) {
-            onChangedBounds?.call(event.camera.visibleBounds);
-          }
         },
       ),
       children: [
@@ -53,11 +45,9 @@ class CarparkMap extends StatelessWidget {
         ListenableBuilder(
           listenable: mapTabController,
           builder: (context, child) {
-            final currentLocation = mapTabController.currentLocation;
+            final currentLocation = mapTabController.location.currentLocation;
             final carparks = mapTabController.visibleCarparks;
-            final searchLocation = mapTabController.searchCenter;
-            final searchLabel = mapTabController.searchCenterLabel ?? '?';
-            final selectedCarparkNo = mapTabController.selectedCarparkNo;
+            final selectedCarpark = mapTabController.selectedCarpark;
             final theme = Theme.of(context);
 
             return MarkerLayer(
@@ -66,20 +56,23 @@ class CarparkMap extends StatelessWidget {
                 if (currentLocation != null)
                   MapMarkers.currentLocationMarker(currentLocation),
 
-                ...carparks.map(
-                  (carpark) => MapMarkers.carparkMarker(
-                    theme: theme,
-                    data: carpark,
-                    isSelected: carpark.carParkNo == selectedCarparkNo,
-                    onTap: onTapMarker,
-                  ),
-                ),
+                ...carparks
+                    .where((carpark) => carpark != selectedCarpark)
+                    .map(
+                      (carpark) => MapMarkers.carparkMarker(
+                        theme: theme,
+                        data: carpark,
+                        isSelected: false,
+                        onTap: onTapMarker,
+                      ),
+                    ),
 
-                if (searchLocation != null)
-                  MapMarkers.searchMarker(
+                if (selectedCarpark != null)
+                  MapMarkers.carparkMarker(
                     theme: theme,
-                    location: searchLocation,
-                    label: searchLabel,
+                    data: selectedCarpark,
+                    isSelected: true,
+                    onTap: onTapMarker,
                   ),
               ],
             );

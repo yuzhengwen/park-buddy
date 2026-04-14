@@ -29,6 +29,8 @@ class LocationService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _locationStatusStream?.cancel();
+    _locationStream?.cancel();
     _locationAvailableStream.close();
     super.dispose();
   }

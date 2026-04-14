@@ -1,49 +1,59 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:park_buddy/UI/map_search_bar.dart';
+import 'package:park_buddy/UI/page_with_sheet.dart';
 import 'package:park_buddy/controllers/map_tab_controller.dart';
 import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/UI/bottom_sheet.dart';
 import 'package:park_buddy/UI/map.dart';
-import 'package:park_buddy/UI/carpark_card.dart';
+import 'package:park_buddy/UI/carpark_list_item.dart';
+import 'package:park_buddy/services/location_search_service.dart';
+import 'package:park_buddy/utils/math_utils.dart';
 
 /// Layout of a map with a draggable sheet of locations.
 class MapWithSheet extends StatefulWidget {
-  final String? sheetTitle;
   final MapTabController mapTabController;
+  final String? sheetTitle;
   final Widget? floatingActionButton;
-  final Widget? searchBar;
   final LatLng? initialPosition;
-  final void Function(Carpark)? onTapListItem;
+  final String confirmCarparkText;
+  final void Function(Carpark)? onConfirmCarpark;
 
   const MapWithSheet({
     super.key,
     required this.mapTabController,
     this.sheetTitle,
     this.floatingActionButton,
-    this.searchBar,
     this.initialPosition,
-    this.onTapListItem,
+    this.confirmCarparkText = 'Confirm',
+    this.onConfirmCarpark,
   });
 
   @override
   State<MapWithSheet> createState() => _MapWithSheetState();
 }
 
-class _MapWithSheetState extends State<MapWithSheet> {
+class _MapWithSheetState extends State<MapWithSheet> with TickerProviderStateMixin {
   final _sheetController = DraggableScrollableController();
-  final _mapController = MapController();
+  late final _mapController = AnimatedMapController(vsync: this);
+  final _searchController = SearchController();
   final _whenMapReady = Completer<void>();
 
   StreamSubscription? _locationEnabledStream;
+  LocalHistoryEntry? _carparkDetailsSubscreen;
+  ScrollController? _scrollController;
 
   @override
   void initState() {
     super.initState();
-    _locationEnabledStream = widget.mapTabController.locationEnabledStream
+    _locationEnabledStream = widget.mapTabController.location.locationAvailableStream
         .where((isEnabled) => isEnabled)
         .listen(_onLocationEnabled);
+    if (widget.initialPosition != null) {
+      widget.mapTabController.visibleCarparksCentre = widget.initialPosition;
+    }
   }
 
   @override
@@ -51,17 +61,17 @@ class _MapWithSheetState extends State<MapWithSheet> {
     _locationEnabledStream?.cancel();
     _sheetController.dispose();
     _mapController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   Future<void> _onLocationEnabled(bool isEnabled) async {
     await _whenMapReady.future;
     final selected = widget.mapTabController.selectedCarpark;
-    final userLocation = widget.mapTabController.currentLocation;
+    final userLocation = widget.mapTabController.location.currentLocation;
 
     final pos = selected?.position ?? widget.initialPosition ?? userLocation;
-    if (pos != null) _mapController.move(pos, CarparkMap.defaultZoom);
-    debugPrint('pos is $pos');
+    if (pos != null) _mapController.animateTo(dest: pos);
   }
 
   void _onMapReady() {
@@ -70,90 +80,251 @@ class _MapWithSheetState extends State<MapWithSheet> {
     }
   }
 
+  void _onSearchDone(String text) {
+  if (!_searchController.isAttached) return;
+
+  if (_searchController.text.isEmpty) _onSearchClear();
+}
+
+  void _onSearchClear() {
+    if (!_searchController.isAttached) return;
+
+    _searchController.clear();
+    widget.mapTabController.visibleCarparksCentre = null;
+  }
+
+  void _onSelectSearchResult(SearchResult res) {
+    widget.mapTabController.visibleCarparksCentre = res.position;
+    _mapController.animateTo(dest: res.position);
+    _searchController.closeView(null);
+  }
+
   void _recenterOnUser() {
-    widget.mapTabController.unselectCarpark();
-    final userLocation = widget.mapTabController.currentLocation;
+    final userLocation = widget.mapTabController.location.currentLocation;
+
     if (userLocation != null) {
-      _mapController.move(userLocation, CarparkMap.defaultZoom);
+      _mapController.animateTo(dest: userLocation);
     }
   }
 
-  void _onTapMarker(Carpark carpark) {
-    widget.mapTabController.selectCarpark(carpark);
-    _mapController.move(carpark.position, CarparkMap.defaultZoom);
+  void _openCarparkDetails(Carpark carpark) {
+    widget.mapTabController.selectedCarpark = carpark;
+    _mapController.animateTo(dest: carpark.position);
+    _resetSheetSize();
+
+    // Don't recreate LocalHistoryEntry if already present
+    if (_carparkDetailsSubscreen != null) return;
+
+    _carparkDetailsSubscreen = LocalHistoryEntry(
+      onRemove: _closeCarparkDetails,
+    );
+    ModalRoute.of(context)?.addLocalHistoryEntry(_carparkDetailsSubscreen!);
+  }
+
+  void _closeCarparkDetails() {
+    setState(() {
+      widget.mapTabController.selectedCarpark = null;
+      _carparkDetailsSubscreen = null;
+    });
+    _resetSheetSize();
+  }
+
+  void _resetSheetSize() {
+    if (_scrollController != null && _scrollController!.hasClients) {
+      _scrollController!.jumpTo(0);
+    }
+
+    if (_sheetController.isAttached) {
+      _sheetController.animateTo(
+        DraggableBottomSheet.initialSize,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _onConfirmSelectedCarpark() {
+    if (widget.mapTabController.selectedCarpark == null) return;
+    widget.onConfirmCarpark?.call(widget.mapTabController.selectedCarpark!);
+  }
+
+  static List<_CarparkListItemData> _createDetailsList(Carpark carpark, double? distance) {
+    return [
+      _CarparkListItemData('Carpark no.', value: carpark.carParkNo),
+      _CarparkListItemData('Type', value: carpark.carParkType),
+      _CarparkListItemData('Short-term parking', value: carpark.shortTermParking),
+      _CarparkListItemData(
+        'Lots available',
+        value: carpark.availability != null
+            ? '${carpark.availability!.lotsAvailable}/${carpark.availability!.totalLots}'
+            : 'n/a',
+      ),
+      _CarparkListItemData(
+        'Distance',
+        value: distance != null
+            ? '${distance.toStringAsFixed(2)} km'
+            : 'n/a',
+      ),
+      _CarparkListItemData(
+        'Fee Structure',
+        special: IconButton(
+          onPressed: null,    // TODO: fee structure popup
+          icon: const Icon(Icons.info_outline),
+        ),
+      ),
+    ];
+  }
+
+  Widget _buildMainBottomSheet(List<Carpark> carparks, LatLng? userLocation) {
+    return DraggableBottomSheet(
+      sheetController: _sheetController,
+      title: widget.sheetTitle,
+      emptyText: 'No car parks nearby.',
+      itemCount: carparks.length,
+      itemBuilder: (context, index, scrollController) {
+        _scrollController = scrollController;
+
+        return CarparkListItem(
+          carpark: carparks[index],
+          distanceKm: userLocation != null
+              ? MathUtils.distanceKm(userLocation, carparks[index].position)
+              : null,
+          onItemSelect: widget.onConfirmCarpark,
+          onItemInfo: _openCarparkDetails,
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailsBottomSheet(Carpark selected, LatLng? userLocation) {
+    final distance = userLocation != null
+        ? MathUtils.distanceKm(userLocation, selected.position)
+        : null;
+    final items = _createDetailsList(selected, distance);
+
+    return DraggableBottomSheet(
+      sheetController: _sheetController,
+      title: selected.address,
+      itemCount: 1 + items.length,
+      itemBuilder: (context, index, scrollController) {
+        _scrollController = scrollController;
+
+        if (index == 0) return _buildDetailsButtonRow(context);
+
+        final item = items[index - 1];
+
+        return ListTile(
+          title: Text(item.name),
+          subtitle: item.value != null ? Text(item.value!) : null,
+          trailing: item.special,
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailsButtonRow(BuildContext context) {
+    return Padding(
+      padding: const .fromLTRB(16, 0, 16, 16),
+      child: Row(
+        spacing: 8,
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel')
+            ),
+          ),
+          Expanded(
+            child: FilledButton(
+              onPressed: _onConfirmSelectedCarpark,
+              child: Text(widget.confirmCarparkText),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloatingButtons(Carpark? selected, LatLng? userLocation) {
+    return Column(
+      crossAxisAlignment: .end,
+      spacing: 8,
+      children: [
+        _RecenterButton(
+          onPressed: userLocation != null ? _recenterOnUser : null,
+        ),
+
+        if (widget.floatingActionButton != null && selected == null)
+          widget.floatingActionButton!,
+      ],
+    );
+  }
+
+  void _showSliderDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Set range'),
+        content: ListenableBuilder(
+          listenable: widget.mapTabController,
+          builder: (context, child) => Column(
+            mainAxisSize: .min,
+            children: [
+              Text('${widget.mapTabController.radiusKm.toStringAsFixed(2)} km'),
+              Slider(
+                value: widget.mapTabController.radiusKm,
+                min: 0.01,
+                max: 1.00,
+                onChanged: (newValue) {
+                  widget.mapTabController.radiusKm = newValue;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Done'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) => Stack(
-        children: [
-          _Content(
-            sheetController: _sheetController,
-            parentHeight: constraints.maxHeight,
-            child: Stack(
-              children: [
-                CarparkMap(
-                  mapController: _mapController,
+    return ListenableBuilder(
+      listenable: widget.mapTabController,
+      builder: (context, child) {
+        final selected = widget.mapTabController.selectedCarpark;
+        final userLocation = widget.mapTabController.location.currentLocation;
+        final carparks = widget.mapTabController.visibleCarparks;
+
+        return PageWithSheet(
+          sheetController: _sheetController,
+          bottomSheet: selected == null
+              ? _buildMainBottomSheet(carparks, userLocation)
+              : _buildDetailsBottomSheet(selected, userLocation),
+          floatingButtons: _buildFloatingButtons(selected, userLocation),
+          content: selected == null
+              ? MapSearchBar(
                   mapTabController: widget.mapTabController,
-                  onTapMarker: _onTapMarker,
-                  onMapReady: _onMapReady,
-                ),
-                if (widget.searchBar != null)
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    right: 8,
-                    child: widget.searchBar!,
-                  ),
-              ],
-            ),
-          ),
-          ListenableBuilder(
-            listenable: widget.mapTabController,
-            builder: (context, child) {
-              final userLocation = widget.mapTabController.currentLocation;
-              final carparks = widget.mapTabController.visibleCarparks;
-
-              return DraggableBottomSheet(
-                sheetController: _sheetController,
-                title: widget.sheetTitle,
-                emptyText: 'No car parks nearby.',
-                itemCount: carparks.length,
-                itemBuilder: (scrollController, context, index) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: CarparkCard(
-                    carpark: carparks[index],
-                    userLocation: userLocation,
-                    onItemSelect: (carpark) => widget.onTapListItem?.call(carpark),
-                  ),
-                ),
-              );
-            },
-          ),
-          _SheetAnchor(
-            sheetController: _sheetController,
-            parentHeight: constraints.maxHeight,
-            child: Column(
-              crossAxisAlignment: .end,
-              spacing: 8,
-              children: [
-                ListenableBuilder(
-                  listenable: widget.mapTabController,
-                  builder: (context, child) {
-                    final userLocation = widget.mapTabController.currentLocation;
-
-                    return _RecenterButton(
-                      onPressed: userLocation != null ? _recenterOnUser : null,
-                    );
-                  },
-                ),
-                if (widget.floatingActionButton != null)
-                  widget.floatingActionButton!,
-              ],
-            ),
-          ),
-        ],
+                  searchController: _searchController,
+                  onSearchDone: _onSearchDone,
+                  onTapRangeButton: _showSliderDialog,
+                  onTapSearchClearButton: _onSearchClear,
+                  onTapSearchResult: _onSelectSearchResult,
+                )
+              : null,
+          background: child,
+        );
+      },
+      child: CarparkMap(
+        mapController: _mapController.mapController,
+        mapTabController: widget.mapTabController,
+        onTapMarker: _openCarparkDetails,
+        onMapReady: _onMapReady,
       ),
     );
   }
@@ -182,75 +353,10 @@ class _RecenterButton extends StatelessWidget {
   }
 }
 
-/// Main content of the page, beneath the buttons and bottom sheet.
-class _Content extends StatelessWidget {
-  final DraggableScrollableController sheetController;
-  final double parentHeight;
-  final Widget? child;
+class _CarparkListItemData {
+  final String name;
+  final String? value;
+  final Widget? special;
 
-  const _Content({
-    required this.sheetController,
-    required this.parentHeight,
-    this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: sheetController,
-      builder: (context, child) {
-        final size = sheetController.isAttached ? sheetController.size : 0.25;
-
-        return Transform.translate(
-          offset: Offset(0.0, -size * parentHeight / 2.0),
-          child: child,
-        );
-      },
-      child: child,
-    );
-  }
-}
-
-/// Anchors its child widget (usually a floating action button) to float right
-/// above the bottom sheet.
-class _SheetAnchor extends StatelessWidget {
-  final DraggableScrollableController sheetController;
-  final Widget child;
-  final double parentHeight;
-
-  const _SheetAnchor({
-    required this.sheetController,
-    required this.child,
-    required this.parentHeight,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: sheetController,
-      builder: (context, child) {
-        final size = sheetController.isAttached ? sheetController.size : 0.25;
-        final offset = size * parentHeight + 16.0;
-        final isVisible = sheetController.isAttached
-            ? sheetController.size <= 0.5
-            : true;
-
-        return Positioned(
-          right: 16,
-          bottom: offset,
-          child: AnimatedScale(
-            scale: isVisible ? 1.0 : 0.0,
-            duration: Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            child: AnimatedOpacity(
-              opacity: isVisible ? 1.0 : 0.0,
-              duration: Duration(milliseconds: 200),
-              child: child!,
-            ),
-          ),
-        );
-      },
-      child: child,
-    );
-  }
+  _CarparkListItemData(this.name, {this.value, this.special});
 }

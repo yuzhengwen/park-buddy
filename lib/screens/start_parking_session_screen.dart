@@ -99,11 +99,9 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
     final Carpark? result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) {
-          return CarparkPickerScreen(
-            initialCarpark: _selectedLocation,
-          );
-        },
+        builder: (context) => CarparkPickerScreen(
+          initialLocation: _selectedLocation?.position,
+        ),
       ),
     );
 
