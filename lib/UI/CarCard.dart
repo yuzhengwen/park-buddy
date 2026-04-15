@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import '../utils/parking_service.dart';
 import '../screens/parking_session_detail_screen.dart';
+import '../services/user_service.dart';
 
 class CarCard extends StatefulWidget {
   final Map<String, dynamic> car;
   final ParkingService parkingService;
+  final UserService? userService;
   final bool showIcons,canExpand;
   final VoidCallback? onEdit;
 
-  CarCard({required this.car, required this.parkingService, this.showIcons = true, this.canExpand = true, this.onEdit});
+  CarCard({required this.car, required this.parkingService, this.userService, this.showIcons = true, this.canExpand = true, this.onEdit});
 
   @override
   _CarCardState createState() => _CarCardState();
@@ -17,7 +19,19 @@ class CarCard extends StatefulWidget {
 class _CarCardState extends State<CarCard> {
   List<Map<String, dynamic>> sessions = [];
   bool isExpanded = false;
-  bool isLoading = false;
+bool isLoading = false;
+bool isParked = false;
+
+@override
+void initState() {
+    super.initState();
+    _checkParkedStatus();
+  }
+
+Future<void> _checkParkedStatus() async {
+    final parked = await widget.parkingService.hasActiveSession(widget.car['carplate']);
+    setState(() => isParked = parked);
+  }
 
   Future<void> _loadSessions() async {
     setState(() => isLoading = true);
@@ -49,10 +63,47 @@ class _CarCardState extends State<CarCard> {
               caricon,
               fit: BoxFit.contain,
               errorBuilder: (context, error, stackTrace) =>
-                  Icon(Icons.directions_car, size: 100, color: Color(0xFF6200EA)),
+                  Icon(Icons.directions_car, size: 100, color: Color(0xFFFF7643)),
             )
-          : Icon(_getCarIcon(caricon), size: 100, color: Color(0xFF6200EA)),
+          : Icon(_getCarIcon(caricon), size: 100, color: Color(0xFFFF7643)),
     );
+  }
+
+  String _formatDuration(Duration d) {
+    final days = d.inDays;
+    final h = d.inHours.remainder(24);
+    final m = d.inMinutes.remainder(60);
+    final parts = <String>[
+      if (days > 0) '${days}d',
+      if (h > 0) '${h}h',
+      '${m}m',
+    ];
+    return parts.join(' ');
+  }
+
+  String _formatSessionSubtitle(Map<String, dynamic> session) {
+    final location = session['carparkname'] as String?;
+    final startRaw = session['parkingstarttime'] as String?;
+    final endRaw = session['parkingendtime'] as String?;
+
+    String? durationStr;
+    bool ongoing = false;
+
+    if (startRaw != null) {
+      final start = DateTime.tryParse(startRaw);
+      if (start != null) {
+        final end = endRaw != null ? DateTime.tryParse(endRaw) : null;
+        ongoing = end == null;
+        final duration = (end ?? DateTime.now()).difference(start.toLocal());
+        durationStr = _formatDuration(duration.abs());
+      }
+    }
+
+    final parts = <String>[
+      ?location,
+      if (durationStr != null) '$durationStr${ongoing ? ' (ongoing)' : ''}',
+    ];
+    return parts.join('\n');
   }
 
   Widget _buildSessionList() {
@@ -73,7 +124,7 @@ class _CarCardState extends State<CarCard> {
         return ListTile(
           leading: Icon(Icons.history, color: Colors.grey),
           title: Text(session['sessionname'] ?? 'Unnamed Session'),
-          subtitle: Text(session['location'] ?? ''),
+          subtitle: Text(_formatSessionSubtitle(session)),
           trailing: Icon(Icons.chevron_right),
           onTap: () {
             Navigator.push(
@@ -91,6 +142,8 @@ class _CarCardState extends State<CarCard> {
 
   @override
   Widget build(BuildContext context) {
+    final String? carOwnerId = widget.car['ownerid'];
+    final bool isOwner = widget.userService?.isCurrentUser(carOwnerId) ?? false;
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
@@ -106,29 +159,52 @@ class _CarCardState extends State<CarCard> {
                 Text(widget.car['carplate'] ?? ''),
                 SizedBox(height: 4),
                 Row(
-                  children: [
-                    Icon(Icons.circle, size: 10, color: Colors.orange),
-                    SizedBox(width: 4),
-                    Text('Parked',
-                        style: TextStyle(
-                            color: Colors.orange,
-                            fontWeight: FontWeight.bold)),
-                  ],
-                ),
+  children: [
+    Icon(Icons.circle, size: 10, color: isParked ? Colors.orange : Colors.green),
+    SizedBox(width: 4),
+    Text(isParked ? 'Parked' : 'Available',
+        style: TextStyle(
+            color: isParked ? Colors.orange : Colors.green,
+            fontWeight: FontWeight.bold)),
+  ],
+),
               ],
             ),
             trailing: widget.canExpand ? IconButton(
-              icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
-              onPressed: () {
-                setState(() => isExpanded = !isExpanded);
-                if (isExpanded && sessions.isEmpty) _loadSessions();
-              },
-              
-            ) : IconButton(
-            icon: const Icon(Icons.edit, color: Color(0xFF6200EA)),
-            onPressed:widget.onEdit
-            ,
-            ),
+                    icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
+                    onPressed: () {
+                      setState(() => isExpanded = !isExpanded);
+                      if (isExpanded && sessions.isEmpty) _loadSessions();
+                    },
+                  )
+                : isOwner ? IconButton(
+                        icon: const Icon(Icons.edit, color: Color(0xFFFF7643)),
+                        onPressed: widget.onEdit,
+                      )
+                    : FutureBuilder<String>(
+                        future: widget.userService?.getOwnernameByUserId(widget.car['ownerid']),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey),
+                            );
+                          }
+                          final name = snapshot.data ?? 'Family';
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: Text(
+                              "$name's Car",
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
             ),
           if (widget.canExpand && isExpanded) ...[
             Divider(),

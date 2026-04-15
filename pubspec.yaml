@@ -36,18 +36,26 @@ dependencies:
   flutter_dotenv: ^6.0.0
   geolocator: ^14.0.2
   flutter_map: ^8.2.1
+  flutter_map_animations: ^0.10.0
   http: ^1.5.0
   latlong2: ^0.9.1
   image_picker: ^1.2.1
+  string_similarity: ^2.2.0
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   intl: ^0.20.2
+  font_awesome_flutter: ^10.7.0
+  flutter_local_notifications: ^21.0.0
+  timezone: ^0.11.0
+
   
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1
+  mocktail: ^1.0.3
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -60,6 +68,12 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/app_icon.png"
+  adaptive_icon_background: "#00FF00"   # bright green background
+  adaptive_icon_foreground: "assets/mainpage_icon.png"
 flutter:
 
   # The following line ensures that the Material Icons font is
@@ -69,6 +83,7 @@ flutter:
 
   assets:
     - assets/hdb_carparks.json
+    - assets/app_icon.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

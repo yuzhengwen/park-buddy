@@ -30,7 +30,7 @@ class SessionBottomBar extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6200EA),
+                backgroundColor: const Color(0xFFFF7643),
                 padding:
                     const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(

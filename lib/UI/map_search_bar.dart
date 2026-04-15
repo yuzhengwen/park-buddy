@@ -1,90 +1,78 @@
 import 'package:flutter/material.dart';
+import 'package:park_buddy/controllers/map_tab_controller.dart';
+import 'package:park_buddy/services/location_search_service.dart';
 
 class MapSearchBar extends StatelessWidget {
+  final SearchController searchController;
+  final MapTabController mapTabController;
+  final void Function(String) onSearchDone;
+  final void Function(BuildContext) onTapRangeButton;
+  final void Function() onTapSearchClearButton;
+  final void Function(SearchResult res) onTapSearchResult;
+
   const MapSearchBar({
     super.key,
     required this.searchController,
-    required this.radiusController,
-    required this.isSearchingLocation,
-    required this.searchText,
-    required this.onApply,
-    required this.onOpenSettings,
+    required this.mapTabController,
+    required this.onTapRangeButton,
+    required this.onTapSearchClearButton,
+    required this.onTapSearchResult,
+    required this.onSearchDone,
   });
-
-  final TextEditingController searchController;
-  final TextEditingController radiusController;
-  final bool isSearchingLocation;
-  final String searchText;
-  final VoidCallback onApply;
-  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 8,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: searchController,
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      hintText: 'Place, address, postal code, or block no.',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: searchText.isEmpty
-                          ? null
-                          : IconButton(
-                              onPressed: searchController.clear,
-                              icon: const Icon(Icons.clear),
-                            ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    onSubmitted: (_) => onApply(),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                SizedBox(
-                  width: 76,
-                  child: TextField(
-                    controller: radiusController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      labelText: 'Km',
-                      hintText: '1',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    onSubmitted: (_) => onApply(),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                SizedBox(
-                  height: 56,
-                  child: FilledButton(
-                    onPressed: isSearchingLocation ? null : onApply,
-                    child: Text(isSearchingLocation ? '...' : 'Go'),
-                  ),
-                ),
-                IconButton(
-                  onPressed: onOpenSettings,
-                  icon: const Icon(Icons.settings),
-                  tooltip: 'Open app settings',
-                ),
-              ],
-            ),
-          ],
+    return Positioned(
+      top: 8,
+      left: 8,
+      right: 8,
+      child: SearchAnchor.bar(
+        searchController: searchController,
+        barHintText: 'Search for carparks',
+        barPadding: const WidgetStatePropertyAll<EdgeInsets>(
+          EdgeInsets.symmetric(horizontal: 8),
         ),
+        onSubmitted: onSearchDone,
+        barLeading: ListenableBuilder(
+          listenable: searchController,
+          builder: (context, _) => searchController.text.isEmpty
+              ? SizedBox(width: 48, height: 48, child: const Icon(Icons.search))
+              : IconButton(
+                  onPressed: onTapSearchClearButton,
+                  icon: const Icon(Icons.clear),
+                ),
+        ),
+        barTrailing: [
+          TextButton.icon(
+            onPressed: () => onTapRangeButton(context),
+            icon: const Icon(Icons.radar),
+            label: ListenableBuilder(
+              listenable: mapTabController,
+              builder: (context, child) {
+                return Text(
+                  '${mapTabController.radiusKm.toStringAsFixed(2)} km',
+                );
+              },
+            ),
+          ),
+        ],
+        suggestionsBuilder: (context, searchController) async {
+          await mapTabController.search.debouncedLocationSearch(
+            searchController.text,
+          );
+          return mapTabController.search.searchResults.map(
+            (res) => ListTile(
+              leading: switch (res.source) {
+                .carpark => const Icon(Icons.directions_car_filled),
+                .building => const Icon(Icons.business),
+              },
+              title: Text(res.searchVal),
+              subtitle: Text(res.address),
+              trailing: const Icon(Icons.arrow_outward),
+              onTap: () => onTapSearchResult(res),
+            ),
+          );
+        },
       ),
     );
   }

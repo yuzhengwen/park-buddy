@@ -3,8 +3,7 @@ import '../utils/parking_service.dart';
 import '../UI/CarCard.dart';
 import 'modify_car_screen.dart';
 import '../services/car_service.dart';
-
-
+import '../services/user_service.dart';
 class CarScreen extends StatefulWidget {
   const CarScreen({super.key});
 
@@ -15,6 +14,7 @@ class CarScreen extends StatefulWidget {
 class _CarScreenState extends State<CarScreen> {
   final _parkingService = ParkingService();
   final _carService = CarService();
+  final _userService = UserService();
   List<Map<String, dynamic>> cars = [];
   bool isLoading = true;
 
@@ -30,7 +30,6 @@ class _CarScreenState extends State<CarScreen> {
   }
 
   Future<void> _navigateToAddCar() async {
-    // 1. Open the screen and WAIT for the result
     final Map<String, dynamic>? newCarData = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const AddCarScreen()),
@@ -64,7 +63,38 @@ class _CarScreenState extends State<CarScreen> {
           children: [
             const Divider(),
             if (isLoading)
-              const Center(child: CircularProgressIndicator())
+            SizedBox(
+                height: MediaQuery.of(context).size.height - 150, 
+                child: const Center(child: CircularProgressIndicator(color: Color(0xFFFF7643)),),)
+            else if (cars.isEmpty)
+              Container(
+                height: MediaQuery.of(context).size.height * 0.6, 
+                alignment: Alignment.center,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.directions_car_filled_outlined, 
+                      size: 80, 
+                      color: Colors.grey.shade300
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      "No cars added yet",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Tap the button below to get started",
+                      style: TextStyle(color: Colors.grey.shade400),
+                    ),
+                  ],
+                ),
+              )
             else
               ListView.builder(
                 shrinkWrap: true,
@@ -74,6 +104,7 @@ class _CarScreenState extends State<CarScreen> {
                   return CarCard(
                     car: cars[index],
                     parkingService: _parkingService,
+                    userService: _userService,
                     showIcons: false,
                     canExpand: false,
                     onEdit: () async {
@@ -87,10 +118,16 @@ class _CarScreenState extends State<CarScreen> {
                       if (result == 'delete') {
                         // User pressed delete
                         await _carService.deleteCar(cars[index]['carplate']);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("${cars[index]['carname']} removed successfully!"))
+                        );
                         _loadCars(); // Refresh list
                       } else if (result is Map<String, dynamic>) {
                         // User updated details
                         await _carService.updateCar(cars[index]['carplate'], result);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("${cars[index]['carname']} updated successfully!"))
+                        );
                         _loadCars(); // Refresh list
                       }
                     },
@@ -117,7 +154,7 @@ class _CarScreenState extends State<CarScreen> {
             icon: const Icon(Icons.add),
             label: const Text("Add Car"),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6200EA),
+              backgroundColor: const Color(0xFFFF7643),
               foregroundColor: Colors.white,
               minimumSize: const Size(double.infinity, 50),
             ),
@@ -127,5 +164,6 @@ class _CarScreenState extends State<CarScreen> {
     );
   }
 }
+
 
 

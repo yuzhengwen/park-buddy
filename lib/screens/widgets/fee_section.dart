@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class FeeSection extends StatelessWidget {
   final double accumulatedFees;
-  final Duration elapsed;
+  final Duration elapsedTime;
   final int gracePeriodMinutes;
   final bool isInCentralArea;
   final double currentHalfHourRate;
@@ -11,7 +11,7 @@ class FeeSection extends StatelessWidget {
   const FeeSection({
     super.key,
     required this.accumulatedFees,
-    required this.elapsed,
+    required this.elapsedTime,
     required this.gracePeriodMinutes,
     required this.isInCentralArea,
     required this.currentHalfHourRate,
@@ -53,7 +53,7 @@ class FeeSection extends StatelessWidget {
   }
 
   void _showBreakdown(BuildContext context) {
-    final billableSeconds = elapsed.inSeconds - (gracePeriodMinutes * 60);
+    final billableSeconds = elapsedTime.inSeconds - (gracePeriodMinutes * 60);
     final billableMins = billableSeconds <= 0 ? 0 : billableSeconds ~/ 60;
 
     showDialog(

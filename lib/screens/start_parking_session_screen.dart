@@ -1,9 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:park_buddy/screens/location_picker/location_picker_screen.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:park_buddy/UI/carpark_picker_screen.dart';
+import 'package:park_buddy/services/notification_service.dart' as notif;
 import 'package:park_buddy/utils/parking_service.dart';
 import 'package:park_buddy/utils/car_icons.dart';
+import 'package:park_buddy/utils/hdb_fee_calculator.dart';
 import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/services/parking_session_service.dart';
 import 'package:park_buddy/services/storage_service.dart';
@@ -40,18 +44,30 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
     super.dispose();
   }
 
-  // Check whether all required fields are filled
+  /// Check whether all required fields are filled
   bool _canSubmit() {
-    return _selectedLocation != null && _selectedCarPlate != null;
+    return _selectedLocation != null &&
+        _selectedCarPlate != null &&
+        _sessionNameController.text.isNotEmpty;
   }
 
   /// Send the created parking session details to the database.
   Future<void> _submit() async {
     try {
       if (!_canSubmit()) throw StateError('Some required fields are empty.');
+      final hasActive = await _parkingService.hasActiveSession(_selectedCarPlate!);
+      if (hasActive) throw StateError('This car already has an active session.');
 
       final sessionName = _sessionNameController.text;
       final sessionDesc = _sessionDescController.text;
+
+      final rateText = _rateThresholdController.text;
+      if (rateText.isNotEmpty) {
+        final rate = double.tryParse(rateText);
+        if (rate == null || rate < 0) {
+          throw StateError('Error: Input a positive numeric number for input threshold');
+        }
+      }
 
       setState(() => _isLoading = true);
 
@@ -64,12 +80,29 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
         rateThreshold: double.tryParse(_rateThresholdController.text),
       );
 
+      tz.TZDateTime? estimatedTime;
+      if (session.rateThreshold != null) {
+        estimatedTime = HdbFeeCalculator.calculateTimeToReachThreshold(
+          threshold: session.rateThreshold!,
+          startTime: session.startTime!,
+          carparkPosition: session.carparkPosition,
+        );
+        
+        if (estimatedTime != null) {
+          notif.scheduleRateAlert(session, estimatedTime);
+        }
+      }
+
       if (_parkingPictures.isNotEmpty) {
         // Upload images in parallel
         final imgUrls = await Future.wait(
           _parkingPictures.map((img) async {
             final bytes = await img.readAsBytes();
-            return _storageService.uploadImage(session.sessionId, bytes);
+            return _storageService.uploadImage(
+              bucket: "parking-images",
+              folder: session.sessionId,
+              bytes: bytes,
+            );
           }),
         );
 
@@ -77,10 +110,17 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
         await _parkingSessionService.updateSessionImages(session.sessionId, imgUrls);
       }
 
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        // Return result data to the calling screen
+        Navigator.pop(context, {
+          'notificationScheduled': session.rateThreshold != null,
+          'estimatedTime': session.rateThreshold != null ? estimatedTime?.toLocal() : null,
+        });
+      }
 
     } catch (e) {
       if (mounted) {
+        debugPrint(e.toString());
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: Could not create session.'))
         );
@@ -94,11 +134,9 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
     final Carpark? result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) {
-          return CarparkPickerScreen(
-            initialMapCenter: _selectedLocation?.position,
-          );
-        },
+        builder: (context) => CarparkPickerScreen(
+          initialLocation: _selectedLocation?.position,
+        ),
       ),
     );
 
@@ -278,7 +316,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
                       scrollDirection: Axis.horizontal,
                       padding: EdgeInsets.all(8),
                       itemCount: _parkingPictures.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (context, index) => ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.file(

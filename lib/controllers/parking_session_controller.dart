@@ -6,8 +6,6 @@ import '../models/parking_session.dart';
 import '../services/parking_session_service.dart';
 import '../services/storage_service.dart';
 import '../utils/hdb_fee_calculator.dart';
-import '../utils/central_area_checker.dart';
-
 class ParkingSessionController extends ChangeNotifier {
   final ParkingSessionService _sessionService;
   final StorageService _storageService;
@@ -29,33 +27,26 @@ class ParkingSessionController extends ChangeNotifier {
   bool isUploadingImage = false;
   bool isSavingDetails = false;
   String? errorMessage;
-  Duration elapsed = Duration.zero;
+  Duration elapsedTime = Duration.zero;
   Timer? _timer;
   CalculationResult? _lastResult;
-
-  // ── Removed: hourlyFee, gracePeriodMinutes ────
-  // Fee is now calculated entirely by HdbFeeCalculator
 
   // ── Derived state ─────────────────────────────
   bool get isOngoing => session?.isOngoing ?? true;
   List<String> get imageUrls => session?.images ?? [];
 
-  // Grace period exposed for UI display only
   int get gracePeriodMinutes => HdbFeeCalculator.gracePeriodMinutes;
   int get completedBlocks {
     if (session?.startTime == null) return 0;
     
-    // Use integer math: (seconds + 1799) ~/ 1800
-    final int billableSeconds = elapsed.inSeconds - (gracePeriodMinutes * 60);
+    final int billableSeconds = elapsedTime.inSeconds - (gracePeriodMinutes * 60);
     if (billableSeconds <= 0) return 0;
     
     return (billableSeconds + 1799) ~/ 1800;
   }  double get accumulatedFees => _lastResult?.totalFee ?? 0.0;
 
-    // Whether this carpark is in the central area — exposed for UI
   bool get isInCentralArea => _lastResult?.isCentral ?? false;
 
-  // Current applicable half-hour rate — exposed for fee breakdown UI
   double get currentHalfHourRate {
     if (!isInCentralArea) return HdbFeeCalculator.rateOutside;
     return HdbFeeCalculator.isPeakNow() 
@@ -64,9 +55,9 @@ class ParkingSessionController extends ChangeNotifier {
   }
 
   String get formattedDuration {
-    final h = elapsed.inHours;
-    final m = elapsed.inMinutes % 60;
-    final s = elapsed.inSeconds % 60;
+    final h = elapsedTime.inHours;
+    final m = elapsedTime.inMinutes % 60;
+    final s = elapsedTime.inSeconds % 60;
     return '${h}h ${m}m ${s}s';
   }
 
@@ -80,7 +71,7 @@ class ParkingSessionController extends ChangeNotifier {
       if (!session!.isOngoing &&
           session!.endTime != null &&
           session!.startTime != null) {
-        elapsed = session!.endTime!.difference(session!.startTime!);
+        elapsedTime = session!.endTime!.difference(session!.startTime!);
       }
 
       _updateFees();
@@ -106,16 +97,16 @@ void _startTimer() {
     if (start == null) return;
     
     // Ensure UTC consistency
-    elapsed = DateTime.now().toUtc().difference(start.toUtc());
+    elapsedTime = DateTime.now().toUtc().difference(start.toUtc());
     _updateFees();
     
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      elapsed = DateTime.now().toUtc().difference(start.toUtc());
+      elapsedTime = DateTime.now().toUtc().difference(start.toUtc());
       _updateFees(); // Recalculate fees and blocks every second
       notifyListeners();
     });
   }
-  // ── Private loaders ───────────────────────────
+  // ── Loaders ───────────────────────────
   Future<void> _loadDriverName() async {
     if (session?.driverId == null) return;
     try {
@@ -169,7 +160,7 @@ void _startTimer() {
     if (session?.carparkPosition == null || session?.startTime == null) return;
     
     _lastResult = HdbFeeCalculator.calculate(
-      elapsed: elapsed,
+      elapsedTime: elapsedTime,
       startTime: session!.startTime!,
       carparkPosition: session!.carparkPosition!,
     );
@@ -187,7 +178,10 @@ void _startTimer() {
     try {
       final bytes = await picked.readAsBytes();
       final url = await _storageService.uploadImage(
-          session!.sessionId, bytes);
+        bucket: "parking-images",
+        folder: session!.sessionId,
+        bytes: bytes,
+      );
 
       final updatedImages = [...imageUrls, url];
       await _sessionService.updateSessionImages(

@@ -67,6 +67,15 @@ class Carpark {
       availability: availability,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Carpark && other.carParkNo == carParkNo;
+  }
+
+  @override
+  int get hashCode => carParkNo.hashCode;
 }
 
 class CarparkAvailability {
