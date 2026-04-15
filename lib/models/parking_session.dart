@@ -1,5 +1,5 @@
 import 'package:latlong2/latlong.dart';
-import '../services/svy21_converter.dart';
+
 class ParkingSession {
   final String sessionId;
   final String? sessionName;
@@ -78,6 +78,23 @@ class ParkingSession {
           : null,
       images: List<String>.from(map['images'] ?? []),
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'sessionid': sessionId,
+      'sessionname': sessionName,
+      'sessiondescription': sessionDescription,
+      'ratethreshold': rateThreshold,
+      'driverid': driverId,
+      'carplate': carPlate,
+      'location': location,
+      'carparkname': carparkName,
+      'parkingstarttime': startTime?.toIso8601String(),
+      'parkingendtime': endTime?.toIso8601String(),
+      'currentfees': currentFees,
+      'images': images,
+    };
   }
 
   ParkingSession copyWith({
