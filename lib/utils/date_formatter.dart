@@ -1,5 +1,5 @@
 class DateFormatter {
-  DateFormatter._(); // Prevents instantiation — static use only
+  DateFormatter._(); // static use only
 
   static String formatDateTime(dynamic raw) {
     if (raw == null) return '-';

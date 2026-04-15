@@ -32,7 +32,6 @@ class HdbFeeCalculator {
       return CalculationResult(totalFee: 0, completedBlocks: 0, isCentral: false);
     }
 
-    // Integer-based ceiling: (seconds + 1799) ~/ 1800
     final int blocks = (billableSeconds + 1799) ~/ 1800;
     
     final bool isCentral = carparkPosition != null && 
@@ -48,7 +47,7 @@ class HdbFeeCalculator {
 
     double totalFee = 0;
     for (int i = 0; i < blocks; i++) {
-      // Each block starts exactly 30 mins after the previous one
+      // Each block starts 30 mins after the previous one
       final blockStart = startTime
           .add(const Duration(minutes: gracePeriodMinutes))
           .add(Duration(minutes: 30 * i));
@@ -66,7 +65,7 @@ class HdbFeeCalculator {
   static bool isPeakNow() => _isPeakTime(DateTime.now());
 
   static bool _isPeakTime(DateTime dt) {
-    // Convert to local if needed, but assuming comparison is consistent
+    // Peak time is Mon-Sat from 7am to 5pm
     final bool isWeekday = dt.weekday >= 1 && dt.weekday <= 6;
     final bool isInHours = dt.hour >= 7 && dt.hour < 17;
     return isWeekday && isInHours;

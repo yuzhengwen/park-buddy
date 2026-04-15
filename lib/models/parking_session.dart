@@ -1,5 +1,4 @@
 import 'package:latlong2/latlong.dart';
-import '../services/svy21_converter.dart';
 class ParkingSession {
   final String sessionId;
   final String? sessionName;
@@ -7,7 +6,7 @@ class ParkingSession {
   final double? rateThreshold;
   final String? driverId;
   final String? carPlate;
-  final String? location; // stores "x_coord,y_coord" SVY21 string
+  final String? location; // stores (lat, long) as string from DB
   final String? carparkName;
   final LatLng? carparkPosition; // derived from location, not stored in DB
   final DateTime? startTime;
@@ -38,17 +37,17 @@ class ParkingSession {
     final locationStr = map['location'] as String?;
 
     if (locationStr != null && locationStr.isNotEmpty) {
-      // Clean the string: Remove ( ) and spaces
+      // Formatting the string
       final cleanStr = locationStr.replaceAll('(', '').replaceAll(')', '').trim();
       final parts = cleanStr.split(',');
 
       if (parts.length == 2) {
-        // 2. Parse as direct GPS doubles
-        final double? lon = double.tryParse(parts[0].trim());
-        final double? lat = double.tryParse(parts[1].trim());
+        // Parse as direct GPS doubles
+        final double? lat = double.tryParse(parts[0].trim());
+        final double? lon = double.tryParse(parts[1].trim());
 
         if (lat != null && lon != null) {
-          // 3. Assign directly to LatLng (Lat, Lng)
+          // Assign directly to LatLng (Lat, Lng)
           // Ensure you pass them in the order the LatLng class expects
           position = LatLng(lat, lon); 
         }

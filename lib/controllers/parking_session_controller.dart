@@ -6,8 +6,6 @@ import '../models/parking_session.dart';
 import '../services/parking_session_service.dart';
 import '../services/storage_service.dart';
 import '../utils/hdb_fee_calculator.dart';
-import '../utils/central_area_checker.dart';
-
 class ParkingSessionController extends ChangeNotifier {
   final ParkingSessionService _sessionService;
   final StorageService _storageService;
@@ -33,29 +31,22 @@ class ParkingSessionController extends ChangeNotifier {
   Timer? _timer;
   CalculationResult? _lastResult;
 
-  // ── Removed: hourlyFee, gracePeriodMinutes ────
-  // Fee is now calculated entirely by HdbFeeCalculator
-
   // ── Derived state ─────────────────────────────
   bool get isOngoing => session?.isOngoing ?? true;
   List<String> get imageUrls => session?.images ?? [];
 
-  // Grace period exposed for UI display only
   int get gracePeriodMinutes => HdbFeeCalculator.gracePeriodMinutes;
   int get completedBlocks {
     if (session?.startTime == null) return 0;
     
-    // Use integer math: (seconds + 1799) ~/ 1800
     final int billableSeconds = elapsed.inSeconds - (gracePeriodMinutes * 60);
     if (billableSeconds <= 0) return 0;
     
     return (billableSeconds + 1799) ~/ 1800;
   }  double get accumulatedFees => _lastResult?.totalFee ?? 0.0;
 
-    // Whether this carpark is in the central area — exposed for UI
   bool get isInCentralArea => _lastResult?.isCentral ?? false;
 
-  // Current applicable half-hour rate — exposed for fee breakdown UI
   double get currentHalfHourRate {
     if (!isInCentralArea) return HdbFeeCalculator.rateOutside;
     return HdbFeeCalculator.isPeakNow() 
@@ -115,7 +106,7 @@ void _startTimer() {
       notifyListeners();
     });
   }
-  // ── Private loaders ───────────────────────────
+  // ── Loaders ───────────────────────────
   Future<void> _loadDriverName() async {
     if (session?.driverId == null) return;
     try {
