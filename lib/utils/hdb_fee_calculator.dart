@@ -62,6 +62,46 @@ class HdbFeeCalculator {
     );
   }
 
+  /// Returns the [DateTime] when the accumulated parking fee is expected to
+  /// first equal or exceed [threshold], or null if the threshold cannot be
+  /// reached within a reasonable number of blocks (~500 hours).
+  ///
+  /// The returned time is the start of the billing block that pushes the
+  /// cumulative fee over the threshold — schedule an alert for this instant.
+  static DateTime? calculateThresholdTime({
+    required DateTime startTime,
+    required double threshold,
+    required LatLng? carparkPosition,
+  }) {
+    if (threshold <= 0) {
+      return startTime.add(const Duration(minutes: gracePeriodMinutes));
+    }
+
+    final bool isCentral = carparkPosition != null &&
+        CentralAreaChecker.isCentralArea(carparkPosition);
+
+    double cumulativeFee = 0;
+
+    for (int i = 0; i < 1000; i++) {
+      // Mirror the same block-start calculation used in calculate()
+      final blockStart = startTime
+          .add(const Duration(minutes: gracePeriodMinutes))
+          .add(Duration(minutes: 30 * i));
+
+      final double blockRate = isCentral
+          ? (_isPeakTime(blockStart) ? rateCentralPeak : rateCentralOffPeak)
+          : rateOutside;
+
+      cumulativeFee += blockRate;
+
+      if (cumulativeFee >= threshold) {
+        return blockStart;
+      }
+    }
+
+    return null; // threshold unreachably high
+  }
+
   static bool isPeakNow() => _isPeakTime(DateTime.now());
 
   static bool _isPeakTime(DateTime dt) {

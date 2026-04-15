@@ -40,15 +40,24 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
     super.dispose();
   }
 
-  /// Check whether all required fields are filled
+  /// Check whether all required fields are filled.
+  /// Disables the button for TC-02 (no car), TC-03 (no location), TC-05 (empty session name).
   bool _canSubmit() {
-    return _selectedLocation != null && _selectedCarPlate != null;
+    return _selectedLocation != null &&
+        _selectedCarPlate != null &&
+        _sessionNameController.text.isNotEmpty;
   }
 
   /// Send the created parking session details to the database.
   Future<void> _submit() async {
     try {
       if (!_canSubmit()) throw StateError('Some required fields are empty.');
+
+      // TC-06 / TC-07: validate rate threshold before hitting the database.
+      // Throws the error string directly if input is non-numeric or negative.
+      final rateThreshold = ParkingSessionService.validateRateThreshold(
+        _rateThresholdController.text,
+      );
 
       final sessionName = _sessionNameController.text;
       final sessionDesc = _sessionDescController.text;
@@ -59,9 +68,9 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
         carPlate: _selectedCarPlate!,
         carparkLocation: _selectedLocation!.position,
         carparkName: _selectedLocation!.address,
-        sessionName: sessionName.isNotEmpty ? sessionName : null,
+        sessionName: sessionName,
         sessionDescription: sessionDesc.isNotEmpty ? sessionDesc : null,
-        rateThreshold: double.tryParse(_rateThresholdController.text),
+        rateThreshold: rateThreshold,
       );
 
       if (_parkingPictures.isNotEmpty) {
@@ -86,8 +95,11 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
     } catch (e) {
       if (mounted) {
         debugPrint(e.toString());
+        // Show the specific error thrown by the service or validator.
+        // TC-04 → 'Error: Could not create session.'
+        // TC-06/TC-07 → 'Error: Input a positive numeric number for input threshold'
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: Could not create session.'))
+          SnackBar(content: Text(e.toString())),
         );
       }
     } finally {
@@ -166,6 +178,8 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
   void initState() {
     super.initState();
     _selectedLocation = widget.initialCarpark;
+    // Rebuild whenever session name changes so _canSubmit() re-evaluates (TC-05).
+    _sessionNameController.addListener(() => setState(() {}));
     _loadCars();
   }
 

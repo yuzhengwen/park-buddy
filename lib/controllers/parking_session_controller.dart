@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/parking_session.dart';
+import '../services/parking_alert_service.dart';
 import '../services/parking_session_service.dart';
 import '../services/storage_service.dart';
 import '../utils/hdb_fee_calculator.dart';
@@ -30,6 +31,7 @@ class ParkingSessionController extends ChangeNotifier {
   Duration elapsedTime = Duration.zero;
   Timer? _timer;
   CalculationResult? _lastResult;
+  final ParkingAlertService _alertService = ParkingAlertService();
 
   // ── Derived state ─────────────────────────────
   bool get isOngoing => session?.isOngoing ?? true;
@@ -78,7 +80,10 @@ class ParkingSessionController extends ChangeNotifier {
       isLoadingSession = false;
       notifyListeners();
 
-      if (session!.isOngoing) _startTimer();
+      if (session!.isOngoing) {
+        _startTimer();
+        await _scheduleThresholdAlert();
+      }
 
       await Future.wait([
         _loadDriverName(),
@@ -141,6 +146,7 @@ void _startTimer() {
     try {
       await _sessionService.endParking(
           session!.sessionId, now, accumulatedFees);
+      await _alertService.cancelThresholdAlert(session!.sessionId);
       session = session!.copyWith(
         endTime: now,
         currentFees: accumulatedFees,
@@ -154,6 +160,37 @@ void _startTimer() {
 
     isEndingParking = false;
     notifyListeners();
+  }
+
+  // ── Alert scheduling ──────────────────────────────────────────────────────
+  Future<void> _scheduleThresholdAlert() async {
+    final sess = session;
+    if (sess == null || !sess.isOngoing || sess.startTime == null) return;
+
+    final threshold = sess.rateThreshold;
+    if (threshold == null) {
+      await _alertService.cancelThresholdAlert(sess.sessionId);
+      return;
+    }
+
+    final alertTime = HdbFeeCalculator.calculateThresholdTime(
+      startTime: sess.startTime!,
+      threshold: threshold,
+      carparkPosition: sess.carparkPosition,
+    );
+
+    if (alertTime == null) {
+      // Threshold too high to ever be exceeded — cancel any stale alert.
+      await _alertService.cancelThresholdAlert(sess.sessionId);
+      return;
+    }
+
+    await _alertService.scheduleThresholdAlert(
+      sessionId: sess.sessionId,
+      carparkName: sess.carparkName,
+      threshold: threshold,
+      alertTime: alertTime,
+    );
   }
 
   void _updateFees() {
@@ -226,6 +263,7 @@ void _startTimer() {
         carparkName: carparkName,
         carparkPosition: carparkPosition,
       );
+      await _scheduleThresholdAlert();
     } catch (e) {
       isSavingDetails = false;
       notifyListeners();
@@ -239,6 +277,9 @@ void _startTimer() {
   @override
   void dispose() {
     _timer?.cancel();
+    // Note: we intentionally do NOT cancel the scheduled OS notification here.
+    // The notification should still fire even after the user leaves the screen,
+    // so they are alerted while the app is in the background.
     super.dispose();
   }
 }
