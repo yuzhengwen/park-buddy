@@ -46,16 +46,28 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
 
   /// Check whether all required fields are filled
   bool _canSubmit() {
-    return _selectedLocation != null && _selectedCarPlate != null;
+    return _selectedLocation != null &&
+        _selectedCarPlate != null &&
+        _sessionNameController.text.isNotEmpty;
   }
 
   /// Send the created parking session details to the database.
   Future<void> _submit() async {
     try {
       if (!_canSubmit()) throw StateError('Some required fields are empty.');
+      final hasActive = await _parkingService.hasActiveSession(_selectedCarPlate!);
+      if (hasActive) throw StateError('This car already has an active session.');
 
       final sessionName = _sessionNameController.text;
       final sessionDesc = _sessionDescController.text;
+
+      final rateText = _rateThresholdController.text;
+      if (rateText.isNotEmpty) {
+        final rate = double.tryParse(rateText);
+        if (rate == null || rate < 0) {
+          throw StateError('Error: Input a positive numeric number for input threshold');
+        }
+      }
 
       setState(() => _isLoading = true);
 
