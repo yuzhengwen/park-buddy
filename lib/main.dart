@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:park_buddy/services/notification_service.dart' as notif;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,6 +14,7 @@ void main() async {
       authFlowType: AuthFlowType.pkce, // Recommended for mobile
     ),
   );
+
   runApp(const MyApp());
 }
 

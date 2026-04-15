@@ -1,9 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 import 'package:park_buddy/UI/carpark_picker_screen.dart';
+import 'package:park_buddy/services/notification_service.dart' as notif;
 import 'package:park_buddy/utils/parking_service.dart';
 import 'package:park_buddy/utils/car_icons.dart';
+import 'package:park_buddy/utils/hdb_fee_calculator.dart';
 import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/services/parking_session_service.dart';
 import 'package:park_buddy/services/storage_service.dart';
@@ -64,6 +68,19 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
         rateThreshold: double.tryParse(_rateThresholdController.text),
       );
 
+      tz.TZDateTime? estimatedTime;
+      if (session.rateThreshold != null) {
+        estimatedTime = HdbFeeCalculator.calculateTimeToReachThreshold(
+          threshold: session.rateThreshold!,
+          startTime: session.startTime!,
+          carparkPosition: session.carparkPosition,
+        );
+        
+        if (estimatedTime != null) {
+          notif.scheduleRateAlert(session, estimatedTime);
+        }
+      }
+
       if (_parkingPictures.isNotEmpty) {
         // Upload images in parallel
         final imgUrls = await Future.wait(
@@ -81,7 +98,13 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
         await _parkingSessionService.updateSessionImages(session.sessionId, imgUrls);
       }
 
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        // Return result data to the calling screen
+        Navigator.pop(context, {
+          'notificationScheduled': session.rateThreshold != null,
+          'estimatedTime': session.rateThreshold != null ? estimatedTime?.toLocal() : null,
+        });
+      }
 
     } catch (e) {
       if (mounted) {
