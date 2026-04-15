@@ -27,7 +27,7 @@ class ParkingSessionController extends ChangeNotifier {
   bool isUploadingImage = false;
   bool isSavingDetails = false;
   String? errorMessage;
-  Duration elapsed = Duration.zero;
+  Duration elapsedTime = Duration.zero;
   Timer? _timer;
   CalculationResult? _lastResult;
 
@@ -39,7 +39,7 @@ class ParkingSessionController extends ChangeNotifier {
   int get completedBlocks {
     if (session?.startTime == null) return 0;
     
-    final int billableSeconds = elapsed.inSeconds - (gracePeriodMinutes * 60);
+    final int billableSeconds = elapsedTime.inSeconds - (gracePeriodMinutes * 60);
     if (billableSeconds <= 0) return 0;
     
     return (billableSeconds + 1799) ~/ 1800;
@@ -55,9 +55,9 @@ class ParkingSessionController extends ChangeNotifier {
   }
 
   String get formattedDuration {
-    final h = elapsed.inHours;
-    final m = elapsed.inMinutes % 60;
-    final s = elapsed.inSeconds % 60;
+    final h = elapsedTime.inHours;
+    final m = elapsedTime.inMinutes % 60;
+    final s = elapsedTime.inSeconds % 60;
     return '${h}h ${m}m ${s}s';
   }
 
@@ -71,7 +71,7 @@ class ParkingSessionController extends ChangeNotifier {
       if (!session!.isOngoing &&
           session!.endTime != null &&
           session!.startTime != null) {
-        elapsed = session!.endTime!.difference(session!.startTime!);
+        elapsedTime = session!.endTime!.difference(session!.startTime!);
       }
 
       _updateFees();
@@ -97,11 +97,11 @@ void _startTimer() {
     if (start == null) return;
     
     // Ensure UTC consistency
-    elapsed = DateTime.now().toUtc().difference(start.toUtc());
+    elapsedTime = DateTime.now().toUtc().difference(start.toUtc());
     _updateFees();
     
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      elapsed = DateTime.now().toUtc().difference(start.toUtc());
+      elapsedTime = DateTime.now().toUtc().difference(start.toUtc());
       _updateFees(); // Recalculate fees and blocks every second
       notifyListeners();
     });
@@ -160,7 +160,7 @@ void _startTimer() {
     if (session?.carparkPosition == null || session?.startTime == null) return;
     
     _lastResult = HdbFeeCalculator.calculate(
-      elapsed: elapsed,
+      elapsedTime: elapsedTime,
       startTime: session!.startTime!,
       carparkPosition: session!.carparkPosition!,
     );
