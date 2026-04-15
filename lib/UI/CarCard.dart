@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/parking_service.dart';
 import '../screens/parking_session_detail_screen.dart';
-import '../services/user_service.dart'; 
+import '../services/user_service.dart';
 
 class CarCard extends StatefulWidget {
   final Map<String, dynamic> car;
@@ -69,6 +69,43 @@ Future<void> _checkParkedStatus() async {
     );
   }
 
+  String _formatDuration(Duration d) {
+    final days = d.inDays;
+    final h = d.inHours.remainder(24);
+    final m = d.inMinutes.remainder(60);
+    final parts = <String>[
+      if (days > 0) '${days}d',
+      if (h > 0) '${h}h',
+      '${m}m',
+    ];
+    return parts.join(' ');
+  }
+
+  String _formatSessionSubtitle(Map<String, dynamic> session) {
+    final location = session['carparkname'] as String?;
+    final startRaw = session['parkingstarttime'] as String?;
+    final endRaw = session['parkingendtime'] as String?;
+
+    String? durationStr;
+    bool ongoing = false;
+
+    if (startRaw != null) {
+      final start = DateTime.tryParse(startRaw);
+      if (start != null) {
+        final end = endRaw != null ? DateTime.tryParse(endRaw) : null;
+        ongoing = end == null;
+        final duration = (end ?? DateTime.now()).difference(start.toLocal());
+        durationStr = _formatDuration(duration.abs());
+      }
+    }
+
+    final parts = <String>[
+      ?location,
+      if (durationStr != null) '$durationStr${ongoing ? ' (ongoing)' : ''}',
+    ];
+    return parts.join('\n');
+  }
+
   Widget _buildSessionList() {
     if (isLoading) {
       return Padding(
@@ -87,7 +124,7 @@ Future<void> _checkParkedStatus() async {
         return ListTile(
           leading: Icon(Icons.history, color: Colors.grey),
           title: Text(session['sessionname'] ?? 'Unnamed Session'),
-          subtitle: Text(session['location'] ?? ''),
+          subtitle: Text(_formatSessionSubtitle(session)),
           trailing: Icon(Icons.chevron_right),
           onTap: () {
             Navigator.push(
