@@ -146,7 +146,7 @@ class SessionSummaryCard extends StatelessWidget {
 
   void _showFeeBreakdown(BuildContext context, ParkingSessionController c) {
     // 1. Get billable minutes (integer result)
-    final int billableSeconds = c.elapsed.inSeconds - (c.gracePeriodMinutes * 60);
+    final int billableSeconds = c.elapsedTime.inSeconds - (c.gracePeriodMinutes * 60);
     final int billableMins = billableSeconds <= 0 ? 0 : billableSeconds ~/ 60;
 
     // 2. Use the controller's blocks instead of calculating here

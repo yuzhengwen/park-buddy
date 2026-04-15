@@ -22,17 +22,17 @@ class HdbFeeCalculator {
   static const int gracePeriodMinutes = 15;
 
   static CalculationResult calculate({
-    required Duration elapsed,
+    required Duration elapsedTime,
     required DateTime startTime,
     required LatLng? carparkPosition,
   }) {
-    final int billableSeconds = elapsed.inSeconds - (gracePeriodMinutes * 60);
+    final int billableSeconds = elapsedTime.inSeconds - (gracePeriodMinutes * 60);
 
     if (billableSeconds <= 0) {
       return CalculationResult(totalFee: 0, completedBlocks: 0, isCentral: false);
     }
 
-    final int blocks = (billableSeconds + 1799) ~/ 1800;
+    final int blocks = (billableSeconds / 1800).ceil();
     
     final bool isCentral = carparkPosition != null && 
                            CentralAreaChecker.isCentralArea(carparkPosition);
