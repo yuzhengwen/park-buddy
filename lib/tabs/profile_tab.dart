@@ -41,7 +41,7 @@ class _ProfileTabState extends State<ProfileTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: FutureBuilder<Map<String, dynamic>?>(
         future: _userService.getProfile(),
         builder: (context, snapshot) {
@@ -146,8 +146,9 @@ class ProfileMenu extends StatelessWidget {
       child: TextButton(
         style: TextButton.styleFrom(
           padding: const EdgeInsets.all(20),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          backgroundColor: const Color(0xFFF5F6F9),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(
+      color: Theme.of(context).colorScheme.outline.withOpacity(0.5))),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         ),
         onPressed: press,
         child: Row(

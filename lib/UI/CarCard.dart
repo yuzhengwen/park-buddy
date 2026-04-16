@@ -57,7 +57,15 @@ Future<void> _checkParkedStatus() async {
     return Container(
       height: 150,
       width: double.infinity,
-      color: Colors.grey[200],
+      decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              // This color adapts: dark grey in light mode, light grey in dark mode
+              color: Theme.of(context).dividerColor, 
+              width: 1,
+            ),
+          ),
       child: caricon != null && caricon.startsWith('http')
           ? Image.network(
               caricon,

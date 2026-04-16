@@ -20,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   late final StreamSubscription<AuthState> _authSubscription;
   final supabase = Supabase.instance.client;
   final UserService _userService = UserService();
+  bool _isLoading = true;
   String? _userId;
 
   @override
@@ -34,6 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (session != null) {
         setState(() {
           _userId = session.user.id;
+          _isLoading = true; // Show loading while we check profile
         });
         
         // This handles the routing check automatically when the deeplink returns
@@ -42,6 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         setState(() {
           _userId = null;
+          _isLoading = false;
         });
       }
     });
@@ -71,6 +74,9 @@ Future<void> _handleNavigation() async {
           MaterialPageRoute(builder: (_) => const MainScreen()),
         );
       } else {
+        setState(() {
+          _isLoading = false; 
+        });
         print("DEBUG: Navigating to Setup (EditProfileScreen)");
         Navigator.pushReplacement(
           context,
@@ -85,12 +91,16 @@ Future<void> _handleNavigation() async {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Navigation error: $e")),
         );
+        setState(() => _isLoading = false);
       }
     }
   }
 
   Future<void> signInWithMagicLink(String email) async {
     try {
+      setState(() {
+        _isLoading = true; // Show loading while we start GitHub flow
+      });
       await supabase.auth.signInWithOtp(
         email: email,
         emailRedirectTo: 'com.parkingbuddy.app://auth-callback',
@@ -107,6 +117,9 @@ Future<void> _handleNavigation() async {
 
   Future<void> signInWithGithub() async {
     try {
+      setState(() {
+        _isLoading = true; // Show loading while we start GitHub flow
+      });
       await supabase.auth.signInWithOAuth(
         OAuthProvider.github,
         redirectTo: kIsWeb ? null : 'com.parkingbuddy.app://auth-callback',
@@ -142,8 +155,18 @@ Future<void> _handleNavigation() async {
 // Your updated Widget build method
 
 Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+      );
+    }
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 30),

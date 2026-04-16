@@ -144,8 +144,8 @@ class _CarScreenState extends State<CarScreen> {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Colors.grey.shade300)),
+          color: Theme.of(context).scaffoldBackgroundColor,
+          border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outline.withOpacity(0.5))),
         ),
         child: SafeArea(
           child: ElevatedButton.icon(
