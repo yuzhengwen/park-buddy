@@ -35,7 +35,8 @@ class _ParkingSessionDetailView extends StatelessWidget {
         backgroundColor: const Color(0xFFFF7643),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: c.isLoadingSession
+      body: SafeArea(
+        child: c.isLoadingSession
           ? const Center(child: CircularProgressIndicator())
           : c.errorMessage != null
               ? Center(child: Text(c.errorMessage!))
@@ -71,6 +72,7 @@ class _ParkingSessionDetailView extends StatelessWidget {
                       const SessionBottomBar(),
                   ],
                 ),
+      ),
     );
   }
 }
