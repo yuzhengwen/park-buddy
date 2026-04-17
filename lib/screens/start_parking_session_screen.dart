@@ -26,17 +26,18 @@ class StartParkingSessionScreen extends StatefulWidget {
 }
 
 class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _sessionNameController = TextEditingController();
   final _sessionDescController = TextEditingController();
   final _rateThresholdController = TextEditingController();
+  final _selectedLocationNotifier = ValueNotifier<Carpark?>(null);
+  final _selectedCarPlateNotifier = ValueNotifier<String?>(null);
   final _picker = ImagePicker();
   final _parkingService = ParkingService();
   final _parkingSessionService = ParkingSessionService();
   final _storageService = StorageService();
 
   List<Map<String, dynamic>> _availableCars = [];
-  Carpark? _selectedLocation;
-  String? _selectedCarPlate;
   List<File> _parkingPictures = const [];
   bool _isLoading = false;
 
@@ -45,13 +46,15 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
     _sessionNameController.dispose();
     _sessionDescController.dispose();
     _rateThresholdController.dispose();
+    _selectedLocationNotifier.dispose();
+    _selectedCarPlateNotifier.dispose();
     super.dispose();
   }
 
   /// Check whether all required fields are filled
   bool _canSubmit() {
-    return _selectedLocation != null &&
-        _selectedCarPlate != null &&
+    return _selectedLocationNotifier.value != null &&
+        _selectedCarPlateNotifier.value != null &&
         _sessionNameController.text.isNotEmpty;
   }
 
@@ -59,7 +62,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
   Future<void> _submit() async {
     try {
       if (!_canSubmit()) throw StateError('Some required fields are empty.');
-      final hasActive = await _parkingService.hasActiveSession(_selectedCarPlate!);
+      final hasActive = await _parkingService.hasActiveSession(_selectedCarPlateNotifier.value!);
       if (hasActive) throw StateError('This car already has an active session.');
 
       final sessionName = _sessionNameController.text;
@@ -76,9 +79,9 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
       setState(() => _isLoading = true);
 
       final session = await _parkingSessionService.createParkingSession(
-        carPlate: _selectedCarPlate!,
-        carparkLocation: _selectedLocation!.position,
-        carparkName: _selectedLocation!.address,
+        carPlate: _selectedCarPlateNotifier.value!,
+        carparkLocation: _selectedLocationNotifier.value!.position,
+        carparkName: _selectedLocationNotifier.value!.address,
         sessionName: sessionName.isNotEmpty ? sessionName : null,
         sessionDescription: sessionDesc.isNotEmpty ? sessionDesc : null,
         rateThreshold: double.tryParse(_rateThresholdController.text),
@@ -139,15 +142,13 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => CarparkPickerScreen(
-          initialLocation: _selectedLocation?.position,
+          initialLocation: _selectedLocationNotifier.value?.position,
         ),
       ),
     );
 
     if (result != null) {
-      setState(() {
-        _selectedLocation = result;
-      });
+      _selectedLocationNotifier.value = result;
     }
   }
 
@@ -212,7 +213,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedLocation = widget.initialCarpark;
+    _selectedLocationNotifier.value = widget.initialCarpark;
     _loadAvailCars();
   }
 
@@ -227,53 +228,64 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
               // padding: const EdgeInsets.all(16),
               children: <Widget>[
                 // 1. Carpark location
-                ListTile(
-                  leading: const ListIcon(Icons.location_on),
-                  title: Text(_selectedLocation?.address ?? 'Choose carpark'),
-                  subtitle: _selectedLocation == null
-                      ? null
-                      : Text.rich(
-                          TextSpan(
-                            children: [
+                ValueListenableBuilder<Carpark?>(
+                  valueListenable: _selectedLocationNotifier,
+                  builder: (context, selectedLocation, _) {
+                    return ListTile(
+                      leading: const ListIcon(Icons.location_on),
+                      title: Text(selectedLocation?.address ?? 'Choose carpark'),
+                      subtitle: selectedLocation == null
+                          ? null
+                          : Text.rich(
                               TextSpan(
-                                text:
-                                    'Car park: ${_selectedLocation!.carParkNo}\n',
+                                children: [
+                                  TextSpan(
+                                    text:
+                                        'Car park: ${selectedLocation.carParkNo}\n',
+                                  ),
+                                  TextSpan(
+                                    text: '${selectedLocation.carParkType} • ${selectedLocation.shortTermParking}',
+                                    style: Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ],
                               ),
-                              TextSpan(
-                                text: '${_selectedLocation!.carParkType} • ${_selectedLocation!.shortTermParking}',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                  isThreeLine: _selectedLocation != null,
-                  trailing: const ListIcon(Icons.edit),
-                  onTap: () => _editLocation(context),
+                            ),
+                      isThreeLine: selectedLocation != null,
+                      trailing: const ListIcon(Icons.edit),
+                      onTap: () => _editLocation(context),
+                    );
+                  },
                 ),
                 // 2. Car selection
-                ListTile(
-                  leading: const ListIcon(Icons.directions_car),
-                  title: DropdownMenu<String>(
-                    expandedInsets: EdgeInsets.zero,
-                    hintText: 'Select Car',
-                    onSelected: (String? selectedCarplate) {
-                      setState(() { _selectedCarPlate = selectedCarplate; });
-                    },
-                    dropdownMenuEntries: _availableCars
-                        .map(
-                          (car) => DropdownMenuEntry<String>(
-                            value: car['carplate'],
-                            label: car['carname'],
-                            labelWidget: ListTile(
-                              title: Text(car['carname']),
-                              subtitle: Text(car['carplate']),
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                            leadingIcon: Icon(carIcons[car['caricon']]),
-                          ),
-                        )
-                        .toList(),
-                  ),
+                ValueListenableBuilder<String?>(
+                  valueListenable: _selectedCarPlateNotifier,
+                  builder: (context, selectedCarPlate, _) {
+                    return ListTile(
+                      leading: const ListIcon(Icons.directions_car),
+                      title: DropdownMenu<String>(
+                        expandedInsets: EdgeInsets.zero,
+                        hintText: 'Select Car',
+                        initialSelection: selectedCarPlate,
+                        onSelected: (String? selectedCarplate) {
+                          _selectedCarPlateNotifier.value = selectedCarplate;
+                        },
+                        dropdownMenuEntries: _availableCars
+                            .map(
+                              (car) => DropdownMenuEntry<String>(
+                                value: car['carplate'],
+                                label: car['carname'],
+                                labelWidget: ListTile(
+                                  title: Text(car['carname']),
+                                  subtitle: Text(car['carplate']),
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                leadingIcon: Icon(carIcons[car['caricon']]),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    );
+                  },
                 ),
                 // 3. Session name
                 ListTile(
@@ -353,15 +365,26 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
             child: SizedBox(
               height: 48,
               width: double.infinity,
-              child: FilledButton(
-                onPressed: _canSubmit() && !_isLoading ? _submit : null,
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator()
-                      )
-                    : const Text('Create session'),
+              child: ListenableBuilder(
+                listenable: Listenable.merge([
+                  _sessionNameController,
+                  _selectedLocationNotifier,
+                  _selectedCarPlateNotifier,
+                ]),
+                builder: (context, _) {
+                  final canSubmit = _canSubmit();
+
+                  return FilledButton(
+                    onPressed: canSubmit && !_isLoading ? _submit : null,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator()
+                          )
+                        : const Text('Create session'),
+                  );
+                },
               ),
             ),
           ),
