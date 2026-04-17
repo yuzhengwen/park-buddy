@@ -38,6 +38,7 @@ class ParkingSessionService {
       })
       .select()
       .single();
+  await _supabase.from('cars').update({'isparked': true}).eq('carplate', carPlate);
   return ParkingSession.fromMap(result);
 }
 
@@ -73,11 +74,12 @@ class ParkingSessionService {
   }
 
   Future<void> endParking(
-      String sessionId, DateTime endTime, double fees) async {
+      String sessionId, String carPlate, DateTime endTime, double fees) async {
     await _supabase.from('parkingsession').update({
       'parkingendtime': endTime.toUtc().toIso8601String(),
       'currentfees': fees,
     }).eq('sessionid', sessionId);
+    await _supabase.from('cars').update({'isparked': false}).eq('carplate', carPlate);
   }
 
   Future<void> updateSessionImages(

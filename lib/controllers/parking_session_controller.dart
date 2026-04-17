@@ -140,7 +140,7 @@ void _startTimer() {
     final now = DateTime.now();
     try {
       await _sessionService.endParking(
-          session!.sessionId, now, accumulatedFees);
+          session!.sessionId, session!.carPlate!, now, accumulatedFees);
       session = session!.copyWith(
         endTime: now,
         currentFees: accumulatedFees,

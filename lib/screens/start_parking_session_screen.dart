@@ -1,21 +1,25 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:park_buddy/UI/carpark_picker_screen.dart';
 import 'package:park_buddy/services/notification_service.dart' as notif;
-import 'package:park_buddy/utils/parking_service.dart';
 import 'package:park_buddy/utils/car_icons.dart';
 import 'package:park_buddy/utils/hdb_fee_calculator.dart';
 import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/services/parking_session_service.dart';
 import 'package:park_buddy/services/storage_service.dart';
+import 'package:park_buddy/utils/parking_service.dart';
 
 class StartParkingSessionScreen extends StatefulWidget {
   final Carpark? initialCarpark;
+  final List<Map<String, dynamic>> cars;
 
-  const StartParkingSessionScreen({super.key, this.initialCarpark});
+  const StartParkingSessionScreen({
+    super.key,
+    this.initialCarpark,
+    required this.cars,
+  });
 
   @override
   State<StartParkingSessionScreen> createState() => _StartParkingSessionScreenState();
@@ -30,7 +34,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
   final _parkingSessionService = ParkingSessionService();
   final _storageService = StorageService();
 
-  List<Map<String, dynamic>> _cars = [];
+  List<Map<String, dynamic>> _availableCars = [];
   Carpark? _selectedLocation;
   String? _selectedCarPlate;
   List<File> _parkingPictures = const [];
@@ -192,16 +196,24 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
     }
   }
 
-  Future<void> _loadCars() async {
-    final data = await _parkingService.fetchCars();
-    setState(() => _cars = data);
+  Future<void> _loadAvailCars() async {
+    final checks = await Future.wait(
+      widget.cars.map((car) => _parkingService.hasActiveSession(car['carplate'])),
+    );
+    if (!mounted) return;
+    setState(() {
+      _availableCars = [
+        for (int i = 0; i < widget.cars.length; i++)
+          if (!checks[i]) widget.cars[i],
+      ];
+    });
   }
 
   @override
   void initState() {
     super.initState();
     _selectedLocation = widget.initialCarpark;
-    _loadCars();
+    _loadAvailCars();
   }
 
   @override
@@ -243,11 +255,11 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
                   leading: const ListIcon(Icons.directions_car),
                   title: DropdownMenu<String>(
                     expandedInsets: EdgeInsets.zero,
-                    hintText: 'Car',
+                    hintText: 'Select Car',
                     onSelected: (String? selectedCarplate) {
                       setState(() { _selectedCarPlate = selectedCarplate; });
                     },
-                    dropdownMenuEntries: _cars
+                    dropdownMenuEntries: _availableCars
                         .map(
                           (car) => DropdownMenuEntry<String>(
                             value: car['carplate'],

@@ -1,22 +1,36 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:park_buddy/models/parking_session.dart';
 import 'package:park_buddy/screens/parking_session_detail_screen.dart';
 import 'package:park_buddy/utils/parking_service.dart';
+import 'package:park_buddy/providers/cars_provider.dart';
 import '../tabs/map_tab.dart';
 import '../tabs/profile_tab.dart';
 import '../tabs/my_parking_tab.dart';
 import 'package:park_buddy/services/notification_service.dart' as notif;
 
-class MainScreen extends StatefulWidget {
+class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
 
   @override
-  State<MainScreen> createState() => _MainScreenState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => CarsProvider()..loadCars(),
+      child: const _MainScreenBody(),
+    );
+  }
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenBody extends StatefulWidget {
+  const _MainScreenBody();
+
+  @override
+  State<_MainScreenBody> createState() => _MainScreenBodyState();
+}
+
+class _MainScreenBodyState extends State<_MainScreenBody> {
   int _selectedIndex = 0;
 
   // List of widgets for each tab

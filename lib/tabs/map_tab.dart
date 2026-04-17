@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/screens/start_parking_session_screen.dart';
 import 'package:park_buddy/controllers/map_tab_controller.dart';
 import 'package:park_buddy/UI/map_with_sheet.dart';
+import 'package:park_buddy/providers/cars_provider.dart';
 
 class MapTab extends StatefulWidget {
   const MapTab({super.key});
@@ -28,11 +30,13 @@ class _MapTabState extends State<MapTab> {
   }
 
   void _startParkingSession(Carpark? carpark) async {
+    final cars = context.read<CarsProvider>().cars;
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => StartParkingSessionScreen(
+        builder: (_) => StartParkingSessionScreen(
           initialCarpark: carpark,
+          cars: cars,
         ),
       ),
     );
