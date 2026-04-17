@@ -61,6 +61,10 @@ class SessionBottomBar extends StatelessWidget {
       BuildContext context, ParkingSessionController c) async {
     try {
       await c.endParking();
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+      
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -134,14 +134,16 @@ Future<void> _checkParkedStatus() async {
           title: Text(session['sessionname'] ?? 'Unnamed Session'),
           subtitle: Text(_formatSessionSubtitle(session)),
           trailing: Icon(Icons.chevron_right),
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) =>
                     ParkingSessionDetailScreen(session: session),
               ),
             );
+            await _checkParkedStatus();
+            await _loadSessions();
           },
         );
       }).toList(),
