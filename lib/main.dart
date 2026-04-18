@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:park_buddy/services/notification_service.dart';
+import 'package:park_buddy/services/service_locator.dart';
 import 'screens/login_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:park_buddy/services/notification_service.dart' as notif;
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +17,10 @@ void main() async {
     ),
   );
 
+  await initializeDateFormatting('en_SG', null);
+  setupServices();
+  await getIt<NotifService>().initialize();
+
   runApp(const MyApp());
 }
 
@@ -23,6 +29,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final navigatorKey = getIt<NotifService>().navigatorKey;
+
     final primary = const Color(0xFFFF7643);
     final secondary = const Color(0xFFFF9C41);
     final colorScheme = ColorScheme.fromSeed(
@@ -44,6 +52,7 @@ class MyApp extends StatelessWidget {
       title: 'Park Buddy',
       theme: ThemeData(colorScheme: colorScheme),
       darkTheme: ThemeData(colorScheme: darkColorScheme),
+      navigatorKey: navigatorKey,
       home: LoginScreen(),
     );
   }

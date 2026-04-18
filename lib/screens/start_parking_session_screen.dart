@@ -1,15 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:timezone/timezone.dart' as tz;
+import 'package:park_buddy/models/parking_session.dart';
 import 'package:park_buddy/UI/carpark_picker_screen.dart';
-import 'package:park_buddy/services/notification_service.dart' as notif;
+import 'package:park_buddy/services/notification_service.dart';
+import 'package:park_buddy/utils/parking_service.dart';
 import 'package:park_buddy/utils/car_icons.dart';
 import 'package:park_buddy/utils/hdb_fee_calculator.dart';
 import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/services/parking_session_service.dart';
 import 'package:park_buddy/services/storage_service.dart';
-import 'package:park_buddy/utils/parking_service.dart';
+import 'package:park_buddy/services/service_locator.dart';
 
 class StartParkingSessionScreen extends StatefulWidget {
   final Carpark? initialCarpark;
@@ -36,6 +37,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
   final _parkingService = ParkingService();
   final _parkingSessionService = ParkingSessionService();
   final _storageService = StorageService();
+  final _notifService = getIt<NotifService>();
 
   List<Map<String, dynamic>> _availableCars = [];
   List<File> _parkingPictures = const [];
@@ -68,11 +70,11 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
       final sessionName = _sessionNameController.text;
       final sessionDesc = _sessionDescController.text;
 
-      final rateText = _rateThresholdController.text;
-      if (rateText.isNotEmpty) {
-        final rate = double.tryParse(rateText);
+      double? rate;
+      if (_rateThresholdController.text.isNotEmpty) {
+        rate = double.tryParse(_rateThresholdController.text);
         if (rate == null || rate < 0) {
-          throw StateError('Error: Input a positive numeric number for input threshold');
+          throw StateError('Parking rate threshold must be positive');
         }
       }
 
@@ -84,21 +86,8 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
         carparkName: _selectedLocationNotifier.value!.address,
         sessionName: sessionName.isNotEmpty ? sessionName : null,
         sessionDescription: sessionDesc.isNotEmpty ? sessionDesc : null,
-        rateThreshold: double.tryParse(_rateThresholdController.text),
+        rateThreshold: rate,
       );
-
-      tz.TZDateTime? estimatedTime;
-      if (session.rateThreshold != null) {
-        estimatedTime = HdbFeeCalculator.calculateTimeToReachThreshold(
-          threshold: session.rateThreshold!,
-          startTime: session.startTime!,
-          carparkPosition: session.carparkPosition,
-        );
-        
-        if (estimatedTime != null) {
-          notif.scheduleRateAlert(session, estimatedTime);
-        }
-      }
 
       if (_parkingPictures.isNotEmpty) {
         // Upload images in parallel
@@ -114,27 +103,46 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
         );
 
         // Create the image links in the database
-        await _parkingSessionService.updateSessionImages(session.sessionId, imgUrls);
+        await _parkingSessionService.updateSessionImages(
+          session.sessionId,
+          imgUrls,
+        );
       }
 
-      if (mounted) {
-        // Return result data to the calling screen
-        Navigator.pop(context, {
-          'notificationScheduled': session.rateThreshold != null,
-          'estimatedTime': session.rateThreshold != null ? estimatedTime?.toLocal() : null,
-        });
+      if (session.rateThreshold != null) {
+        await _scheduleRateAlert(session);
       }
+
+      if (mounted) Navigator.pop(context, session);
 
     } catch (e) {
       if (mounted) {
         debugPrint(e.toString());
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: Could not create session.'))
+          SnackBar(content: Text('Could not create session: $e'))
         );
       }
+
     } finally {
-      if(mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _scheduleRateAlert(ParkingSession session) async {
+    final estimatedTime = HdbFeeCalculator.calculateThresholdTime(
+      threshold: session.rateThreshold!,
+      startTime: session.startTime!,
+      carparkPosition: session.carparkPosition,
+    );
+
+    if (estimatedTime == null) {
+      throw StateError('Unable to calculate rate threshold trigger time');
+    }
+
+    await _notifService.scheduleRateAlert(
+      session: session,
+      scheduledTime: estimatedTime,
+    );
   }
 
   Future<void> _editLocation(BuildContext context) async {
@@ -182,7 +190,7 @@ class _StartParkingSessionScreenState extends State<StartParkingSessionScreen> {
   Future<void> _editParkingImage() async {
     try {
       final photo = await _pickImageWithSheet();
- 
+
       if (photo != null) {
         setState(() {
           _parkingPictures = [..._parkingPictures, File(photo.path)];

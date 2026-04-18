@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/screens/start_parking_session_screen.dart';
 import 'package:park_buddy/controllers/map_tab_controller.dart';
 import 'package:park_buddy/UI/map_with_sheet.dart';
 import 'package:park_buddy/providers/cars_provider.dart';
+import 'package:park_buddy/utils/hdb_fee_calculator.dart';
 
 class MapTab extends StatefulWidget {
   const MapTab({super.key});
@@ -40,44 +42,25 @@ class _MapTabState extends State<MapTab> {
         ),
       ),
     );
-    
-    // Show popup if notification was scheduled
-    if (result is Map<String, dynamic> && result['notificationScheduled'] == true) {
-      final estimatedTime = result['estimatedTime'];
-      if (estimatedTime != null) {
-        _showNotificationScheduledPopup(estimatedTime);
+
+    var msg = 'Session created.';
+
+    if (result.rateThreshold != null) {
+      final scheduledTime = HdbFeeCalculator.calculateThresholdTime(
+        threshold: result.rateThreshold!,
+        startTime: result.startTime!,
+        carparkPosition: result.carparkPosition,
+      );
+
+      if (scheduledTime == null) {
+        throw StateError('Unable to calculate rate threshold trigger time');
       }
+
+      msg = '$msg Alert scheduled for ${DateFormat.jm().format(scheduledTime)}';
     }
-  }
 
-  void _showNotificationScheduledPopup(DateTime estimatedTime) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Notification scheduled for ${_formatTime(estimatedTime)}',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        duration: const Duration(seconds: 5),
-        action: SnackBarAction(
-          label: 'OK',
-          onPressed: () {},
-        ),
-      ),
-    );
-  }
-
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = time.difference(now);
-    
-    if (difference.isNegative) {
-      return 'Now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes.toInt()} minutes';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours.toInt()} hours';
-    } else {
-      return '${difference.inDays} days';
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     }
   }
 
