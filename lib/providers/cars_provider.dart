@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/parking_service.dart';
+import '../services/parking_service.dart';
 
 class CarsProvider extends ChangeNotifier {
   final _parkingService = ParkingService();

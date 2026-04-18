@@ -3,7 +3,7 @@ import 'package:park_buddy/widgets/generic_dialog_utils.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'main_screen.dart';
-import '../utils/auth.dart';
+import '../services/auth.dart';
 import 'dart:async';
 import '../services/user_service.dart';
 import 'edit_profile.dart';

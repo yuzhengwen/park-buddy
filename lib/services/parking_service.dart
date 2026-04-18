@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'family_service.dart';
+import '../utils/family_service.dart';
 
 class ParkingService {
   final _supabase = Supabase.instance.client;

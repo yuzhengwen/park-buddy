@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/parking_service.dart';
+import '../services/parking_service.dart';
 import '../screens/parking_session_detail_screen.dart';
 import '../services/user_service.dart';
 

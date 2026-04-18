@@ -9,7 +9,7 @@ import 'package:park_buddy/utils/hdb_fee_calculator.dart';
 import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/services/parking_session_service.dart';
 import 'package:park_buddy/services/storage_service.dart';
-import 'package:park_buddy/utils/parking_service.dart';
+import 'package:park_buddy/services/parking_service.dart';
 
 class StartParkingSessionScreen extends StatefulWidget {
   final Carpark? initialCarpark;

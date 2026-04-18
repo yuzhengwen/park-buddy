@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:park_buddy/models/parking_session.dart';
 import 'package:park_buddy/screens/parking_session_detail_screen.dart';
-import 'package:park_buddy/utils/parking_service.dart';
+import 'package:park_buddy/services/parking_service.dart';
 import 'package:park_buddy/providers/cars_provider.dart';
 import '../tabs/map_tab.dart';
 import '../tabs/profile_tab.dart';
