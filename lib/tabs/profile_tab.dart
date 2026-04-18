@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import '../utils/auth.dart'; 
-import '../screens/family_screen.dart'; 
-import '../screens/car_screen.dart'; 
+import 'package:provider/provider.dart';
+import '../utils/auth.dart';
+import '../screens/family_screen.dart';
+import '../screens/car_screen.dart';
 import '../screens/edit_profile.dart';
 import '../services/user_service.dart';
 import '../screens/login_screen.dart';
+import '../providers/cars_provider.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
@@ -99,13 +101,19 @@ class _ProfileTabState extends State<ProfileTab> {
                 ProfileMenu(
                   text: "Cars",
                   icon: Icons.directions_car_filled_outlined,
-                  press: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CarScreen())),
+                  press: () async {
+                    await Navigator.push(context, MaterialPageRoute(builder: (_) => const CarScreen()));
+                    if (context.mounted) context.read<CarsProvider>().loadCars();
+                  },
                 ),
 
                 ProfileMenu(
                   text: "Family",
                   icon: Icons.group_outlined,
-                  press: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FamilyScreen())),
+                  press: () async {
+                    await Navigator.push(context, MaterialPageRoute(builder: (_) => const FamilyScreen()));
+                    if (context.mounted) context.read<CarsProvider>().loadCars();
+                  },
                 ),
 
                 ProfileMenu(
