@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/parking_service.dart';
-import '../UI/CarCard.dart';
+import '../widgets/CarCard.dart';
 import 'modify_car_screen.dart';
 import '../services/car_service.dart';
 import '../services/user_service.dart';

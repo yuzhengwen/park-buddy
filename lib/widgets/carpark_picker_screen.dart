@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:park_buddy/controllers/map_tab_controller.dart';
-import 'package:park_buddy/UI/map_with_sheet.dart';
+import 'package:park_buddy/widgets/map_with_sheet.dart';
 
 class CarparkPickerScreen extends StatefulWidget {
   final LatLng? initialLocation;

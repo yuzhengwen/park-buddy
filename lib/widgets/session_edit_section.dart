@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:latlong2/latlong.dart';
-import '../../controllers/parking_session_controller.dart';
-import '../../UI/carpark_picker_screen.dart';
-import '../../models/carpark.dart';
+import '../controllers/parking_session_controller.dart';
+import 'carpark_picker_screen.dart';
+import '../models/carpark.dart';
 
 class SessionEditSection extends StatefulWidget {
   const SessionEditSection({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../utils/date_formatter.dart';
+import '../utils/date_formatter.dart';
 import 'package:provider/provider.dart';
-import '../../../controllers/parking_session_controller.dart';
+import '../../controllers/parking_session_controller.dart';
 
 class SessionSummaryCard extends StatelessWidget {
   final DateTime? startTime;

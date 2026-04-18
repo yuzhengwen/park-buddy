@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../controllers/parking_session_controller.dart';
+import '../../controllers/parking_session_controller.dart';
 
 class SessionBottomBar extends StatelessWidget {
   const SessionBottomBar();

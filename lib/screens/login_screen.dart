@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:park_buddy/UI/generic_dialog_utils.dart';
+import 'package:park_buddy/widgets/generic_dialog_utils.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'main_screen.dart';

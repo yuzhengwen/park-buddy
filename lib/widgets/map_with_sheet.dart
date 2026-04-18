@@ -2,13 +2,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map_animations/flutter_map_animations.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:park_buddy/UI/map_search_bar.dart';
-import 'package:park_buddy/UI/page_with_sheet.dart';
+import 'package:park_buddy/widgets/map_search_bar.dart';
+import 'package:park_buddy/widgets/page_with_sheet.dart';
 import 'package:park_buddy/controllers/map_tab_controller.dart';
 import 'package:park_buddy/models/carpark.dart';
-import 'package:park_buddy/UI/bottom_sheet.dart';
-import 'package:park_buddy/UI/map.dart';
-import 'package:park_buddy/UI/carpark_list_item.dart';
+import 'package:park_buddy/widgets/bottom_sheet.dart';
+import 'package:park_buddy/widgets/map.dart';
+import 'package:park_buddy/widgets/carpark_list_item.dart';
 import 'package:park_buddy/services/location_search_service.dart';
 import 'package:park_buddy/utils/math_utils.dart';
 

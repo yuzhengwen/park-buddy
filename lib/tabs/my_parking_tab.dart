@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cars_provider.dart';
 import '../utils/parking_service.dart';
-import '../UI/CarCard.dart';
+import '../widgets/CarCard.dart';
 
 class MyParkingTab extends StatelessWidget {
   const MyParkingTab({super.key});

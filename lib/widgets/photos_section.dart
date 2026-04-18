@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../../../controllers/parking_session_controller.dart';
+import '../../controllers/parking_session_controller.dart';
 
 class PhotosSection extends StatelessWidget {
   const PhotosSection();

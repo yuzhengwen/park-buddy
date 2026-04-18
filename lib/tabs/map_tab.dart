@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/screens/start_parking_session_screen.dart';
 import 'package:park_buddy/controllers/map_tab_controller.dart';
-import 'package:park_buddy/UI/map_with_sheet.dart';
+import 'package:park_buddy/widgets/map_with_sheet.dart';
 import 'package:park_buddy/providers/cars_provider.dart';
 
 class MapTab extends StatefulWidget {

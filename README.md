@@ -28,7 +28,7 @@ Park Buddy is a Flutter mobile app built for managing parking sessions in Singap
 - `lib/services/`: Network, Supabase, storage, notifications, location, and parking session services.
 - `lib/controllers/`: State controllers for map and parking session behavior.
 - `lib/models/`: Domain models like `Carpark`, `ParkingSession`, and `ParkingRate`.
-- `lib/UI/`: Custom widgets and map presentation components.
+- `lib/widgets/`: Custom widgets and map presentation components.
 - `lib/utils/`: Utility helpers including parking fee calculations, location search, and geometry utilities.
 - `assets/`: Static data files and app icons.
 

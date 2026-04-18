@@ -3,7 +3,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/controllers/map_tab_controller.dart';
-import 'package:park_buddy/UI/map_markers.dart';
+import 'package:park_buddy/widgets/map_markers.dart';
 
 class CarparkMap extends StatelessWidget {
   static const defaultCenter = LatLng(1.3521, 103.8198);

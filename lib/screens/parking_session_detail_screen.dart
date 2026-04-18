@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/parking_session_controller.dart';
-import 'widgets/session_summary_card.dart';
-import 'widgets/session_edit_section.dart';
-import 'widgets/photos_section.dart';
-import 'widgets/session_bottom_bar.dart';
+import '../widgets/session_summary_card.dart';
+import '../widgets/session_edit_section.dart';
+import '../widgets/photos_section.dart';
+import '../widgets/session_bottom_bar.dart';
 
 class ParkingSessionDetailScreen extends StatelessWidget {
   final Map<String, dynamic> session;

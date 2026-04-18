@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:park_buddy/UI/carpark_picker_screen.dart';
+import 'package:park_buddy/widgets/carpark_picker_screen.dart';
 import 'package:park_buddy/services/notification_service.dart' as notif;
 import 'package:park_buddy/utils/car_icons.dart';
 import 'package:park_buddy/utils/hdb_fee_calculator.dart';
