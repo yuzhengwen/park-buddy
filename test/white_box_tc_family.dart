@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:park_buddy/utils/family_service.dart';
+import 'package:park_buddy/services/family_service.dart';
 
 // Mocks
 class MockSupabaseClient extends Mock implements SupabaseClient {}

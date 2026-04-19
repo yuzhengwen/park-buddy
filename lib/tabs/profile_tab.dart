@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import '../utils/auth.dart'; 
-import '../screens/family_screen.dart'; 
-import '../screens/car_screen.dart'; 
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import '../screens/family_screen.dart';
+import '../screens/car_screen.dart';
 import '../screens/edit_profile.dart';
 import '../services/user_service.dart';
 import '../screens/login_screen.dart';
+import '../providers/cars_provider.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
@@ -14,6 +16,7 @@ class ProfileTab extends StatefulWidget {
 }
 class _ProfileTabState extends State<ProfileTab> {
   final UserService _userService = UserService();
+  final AuthService _authService = AuthService();
 
   void _showDeleteDialog(BuildContext context) {
     showDialog(
@@ -28,7 +31,7 @@ class _ProfileTabState extends State<ProfileTab> {
           ),
           TextButton(
             onPressed: () async {
-              await _userService.deleteUserAccount();
+              await _userService.deleteUserAccount(context);
               // Redirect to Login Screen
               Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (_) => LoginScreen()),(route) => false,);
             },
@@ -41,7 +44,7 @@ class _ProfileTabState extends State<ProfileTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: FutureBuilder<Map<String, dynamic>?>(
         future: _userService.getProfile(),
         builder: (context, snapshot) {
@@ -99,13 +102,19 @@ class _ProfileTabState extends State<ProfileTab> {
                 ProfileMenu(
                   text: "Cars",
                   icon: Icons.directions_car_filled_outlined,
-                  press: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CarScreen())),
+                  press: () async {
+                    await Navigator.push(context, MaterialPageRoute(builder: (_) => const CarScreen()));
+                    if (context.mounted) context.read<CarsProvider>().loadCars();
+                  },
                 ),
 
                 ProfileMenu(
                   text: "Family",
                   icon: Icons.group_outlined,
-                  press: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FamilyScreen())),
+                  press: () async {
+                    await Navigator.push(context, MaterialPageRoute(builder: (_) => const FamilyScreen()));
+                    if (context.mounted) context.read<CarsProvider>().loadCars();
+                  },
                 ),
 
                 ProfileMenu(
@@ -117,7 +126,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 ProfileMenu(
                   text: "Log Out",
                   icon: Icons.logout,
-                  press: () => signOut(context),
+                  press: () => _authService.signOut(context),
                 ),
               ],
             ),
@@ -146,8 +155,9 @@ class ProfileMenu extends StatelessWidget {
       child: TextButton(
         style: TextButton.styleFrom(
           padding: const EdgeInsets.all(20),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          backgroundColor: const Color(0xFFF5F6F9),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(
+      color: Theme.of(context).colorScheme.outline.withOpacity(0.5))),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         ),
         onPressed: press,
         child: Row(

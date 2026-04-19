@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:park_buddy/UI/family_header.dart';
-import 'package:park_buddy/UI/family_members_list.dart';
-import 'package:park_buddy/UI/generic_dialog_utils.dart';
-import '../utils/family_service.dart';
+import 'package:park_buddy/screens/widgets/family_header.dart';
+import 'package:park_buddy/screens/widgets/family_members_list.dart';
+import 'package:park_buddy/screens/widgets/generic_dialog_utils.dart';
+import '../services/family_service.dart';
 
 class FamilyScreen extends StatefulWidget {
   const FamilyScreen({super.key});

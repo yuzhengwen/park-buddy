@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:park_buddy/models/carpark.dart';
 import 'package:park_buddy/utils/math_utils.dart';
-import 'package:park_buddy/services/api_controller.dart';
+import 'package:park_buddy/services/api_service.dart';
 import 'package:park_buddy/services/location_service.dart';
 import 'package:park_buddy/services/location_search_service.dart';
 

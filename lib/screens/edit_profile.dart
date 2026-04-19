@@ -169,7 +169,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   labelText: "Email Address",
                   prefixIcon: const Icon(Icons.email_outlined),
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

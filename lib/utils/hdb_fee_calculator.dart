@@ -80,7 +80,7 @@ class HdbFeeCalculator {
   /// 
   /// Returns a [tz.TZDateTime] when the threshold will be reached, or null if
   /// the threshold cannot be reached (e.g., threshold is 0 or negative).
-  static tz.TZDateTime? calculateTimeToReachThreshold({
+  static tz.TZDateTime? calculateThresholdTime({
     required double threshold,
     required DateTime startTime,
     required LatLng? carparkPosition,
