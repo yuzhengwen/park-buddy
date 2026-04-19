@@ -17,7 +17,11 @@ class NotifService extends ChangeNotifier {
   List<RateNotification> _notifs = const [];
 
   /// Pending rate alerts registered in the system.
-  List<RateNotification> get pendingRateAlerts => _notifs;
+  List<RateNotification> get pendingRateAlerts {
+    _updatePendingRateAlerts();
+    notifyListeners();
+    return _notifs;
+  }
 
   /// Global key for navigating to session details screen from notification
   GlobalKey<NavigatorState> get navigatorKey => _navigatorKey;

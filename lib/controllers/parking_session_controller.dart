@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:park_buddy/services/notification_service.dart';
+import 'package:park_buddy/services/service_locator.dart';
 import '../models/parking_session.dart';
 import '../services/parking_session_service.dart';
 import '../services/storage_service.dart';
@@ -10,6 +12,7 @@ class ParkingSessionController extends ChangeNotifier {
   final ParkingSessionService _sessionService;
   final StorageService _storageService;
   final Map<String, dynamic> initialSession;
+  final _notifService = getIt<NotifService>();
 
   ParkingSessionController({
     required this.initialSession,
@@ -145,6 +148,12 @@ void _startTimer() {
         endTime: now,
         currentFees: accumulatedFees,
       );
+
+      final alert = _notifService.pendingRateAlerts
+          .where((a) => a.session.sessionId == session!.sessionId)
+          .firstOrNull;
+      if (alert != null) _notifService.cancelRateAlert(alert);
+
     } catch (e) {
       _startTimer();
       isEndingParking = false;
@@ -226,6 +235,28 @@ void _startTimer() {
         carparkName: carparkName,
         carparkPosition: carparkPosition,
       );
+
+      if (session!.rateThreshold != null) {
+        final alert = _notifService.pendingRateAlerts
+            .where((a) => a.session.sessionId == session!.sessionId)
+            .firstOrNull;
+
+        final newTime = HdbFeeCalculator.calculateThresholdTime(
+          threshold: session!.rateThreshold!,
+          startTime: session!.startTime!,
+          carparkPosition: session!.carparkPosition,
+        );
+
+        if (newTime != null) {
+          if (alert != null) _notifService.cancelRateAlert(alert);
+
+          _notifService.scheduleRateAlert(
+            session: session!,
+            scheduledTime: newTime,
+          );
+        }
+      }
+
     } catch (e) {
       isSavingDetails = false;
       notifyListeners();
