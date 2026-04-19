@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../utils/auth.dart';
+import '../services/auth_service.dart';
 import '../screens/family_screen.dart';
 import '../screens/car_screen.dart';
 import '../screens/edit_profile.dart';
@@ -16,6 +16,7 @@ class ProfileTab extends StatefulWidget {
 }
 class _ProfileTabState extends State<ProfileTab> {
   final UserService _userService = UserService();
+  final AuthService _authService = AuthService();
 
   void _showDeleteDialog(BuildContext context) {
     showDialog(
@@ -30,7 +31,7 @@ class _ProfileTabState extends State<ProfileTab> {
           ),
           TextButton(
             onPressed: () async {
-              await _userService.deleteUserAccount();
+              await _userService.deleteUserAccount(context);
               // Redirect to Login Screen
               Navigator.pushAndRemoveUntil(context,MaterialPageRoute(builder: (_) => LoginScreen()),(route) => false,);
             },
@@ -125,7 +126,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 ProfileMenu(
                   text: "Log Out",
                   icon: Icons.logout,
-                  press: () => signOut(context),
+                  press: () => _authService.signOut(context),
                 ),
               ],
             ),

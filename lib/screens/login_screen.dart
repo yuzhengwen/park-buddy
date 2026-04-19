@@ -3,7 +3,7 @@ import 'package:park_buddy/UI/generic_dialog_utils.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'main_screen.dart';
-import '../utils/auth.dart';
+import '../services/auth_service.dart';
 import 'dart:async';
 import '../services/user_service.dart';
 import 'edit_profile.dart';
@@ -20,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   late final StreamSubscription<AuthState> _authSubscription;
   final supabase = Supabase.instance.client;
   final UserService _userService = UserService();
+  final AuthService _authService = AuthService();
   bool _isLoading = true;
   String? _userId;
 
@@ -95,62 +96,34 @@ Future<void> _handleNavigation() async {
       }
     }
   }
+  Future<void> _handleMagicLink(String email) async {
+  setState(() => _isLoading = true);
+  
+  try {
+    await _authService.signInWithMagicLink(email);
 
-  Future<void> signInWithMagicLink(String email) async {
-    try {
-      setState(() {
-        _isLoading = true; // Show loading while we start GitHub flow
-      });
-      await supabase.auth.signInWithOtp(
-        email: email,
-        emailRedirectTo: 'com.parkingbuddy.app://auth-callback',
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Check your email for the Magic Link!')),
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Check your email for the Magic Link!')),
-        );
-      }
-    } catch (e) {
-      debugPrint("Magic Link Error: $e");
     }
+  } catch (e) {
+    debugPrint("Magic Link Error: $e");
+    if (mounted) setState(() => _isLoading = false);
+    // Show error SnackBar here if needed
+  } 
+}
+
+Future<void> _handleGithubSignIn() async {
+  setState(() => _isLoading = true);
+  
+  try {
+    await _authService.signInWithGithub();
+  } catch (e) {
+    debugPrint("GitHub Error: $e");
+    if (mounted) setState(() => _isLoading = false);
   }
-
-  Future<void> signInWithGithub() async {
-    try {
-      setState(() {
-        _isLoading = true; // Show loading while we start GitHub flow
-      });
-      await supabase.auth.signInWithOAuth(
-        OAuthProvider.github,
-        redirectTo: kIsWeb ? null : 'com.parkingbuddy.app://auth-callback',
-        authScreenLaunchMode: kIsWeb
-            ? LaunchMode.platformDefault
-            : LaunchMode.externalApplication,
-      );
-    } catch (e) {
-      debugPrint("GitHub Error: $e");
-    }
-  }
-
-  Future<void> _signInAnonymously() async {
-    try {
-      final response = await supabase.auth.signInAnonymously();
-      if (!mounted) return;
-
-      setState(() {
-        _userId = response.user?.id;
-      });
-
-      // Navigate using the check logic
-      await _handleNavigation();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed: $e')),
-        );
-      }
-    }
-  }
+}
 
 // Your updated Widget build method
 
@@ -202,7 +175,7 @@ Widget build(BuildContext context) {
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton.icon(
-                  onPressed: () => signInWithGithub(),
+                  onPressed: () => _handleGithubSignIn(),
                   icon: const FaIcon(FontAwesomeIcons.github, size: 20),
                   label: const Text(
                     'Sign in with GitHub',
@@ -238,7 +211,7 @@ Widget build(BuildContext context) {
                         return null;
                       },
                     );
-                    if (email != null) signInWithMagicLink(email);
+                    if (email != null) _handleMagicLink(email);
                   },
                   icon: const Icon(Icons.auto_awesome, size: 20),
                   label: const Text(

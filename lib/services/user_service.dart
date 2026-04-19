@@ -2,9 +2,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'storage_service.dart';
+import 'auth_service.dart';
 class UserService {
   final _supabase = Supabase.instance.client;
   final _storageService = StorageService();
+  final _authService = AuthService();
   final Map<String, String> _nameCache = {};
   // 1. Get current user object
   User? get currentUser => _supabase.auth.currentUser;
@@ -15,7 +17,7 @@ class UserService {
   // 3. Get Email
   String get email => currentUser?.email ?? "No email linked";
 
-  Future<void> deleteUserAccount() async {
+  Future<void> deleteUserAccount(context) async {
     try {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) return;
@@ -27,7 +29,7 @@ class UserService {
           .match({'userid': userId});
 
       // 2. Log them out immediately
-      await _supabase.auth.signOut();
+      await _authService.signOut(context); // Pass the context for showing a snackbar
       
       // Note: To fully delete the AUTH user, you usually trigger 
       // a PostgreSQL function or an Edge Function for security.
