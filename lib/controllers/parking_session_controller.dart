@@ -224,7 +224,7 @@ void _startTimer() {
         sessionName: sessionName,
         sessionDescription: sessionDescription,
         rateThreshold: rateThreshold,
-        location: location,
+        location: carparkPosition,
         carparkName: carparkName,
       );
       session = session!.copyWith(

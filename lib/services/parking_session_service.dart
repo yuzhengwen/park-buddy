@@ -95,13 +95,13 @@ class ParkingSessionService {
     required String? sessionDescription,
     required double? rateThreshold,
     String? carparkName,
-    required String? location, // stores "x_coord,y_coord"
+    required LatLng? location,
   }) async {
     await _supabase.from('parkingsession').update({
       'sessionname': sessionName,
       'sessiondescription': sessionDescription,
       'ratethreshold': rateThreshold,
-      'location': location,
+      if (location != null) 'location': '(${location.longitude}, ${location.latitude})',
       'carparkname': carparkName,
     }).eq('sessionid', sessionId);
   }
