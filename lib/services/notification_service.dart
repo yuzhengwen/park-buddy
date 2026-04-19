@@ -41,6 +41,14 @@ class NotifService extends ChangeNotifier {
       },
     );
 
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+
+    await androidPlugin?.requestNotificationsPermission();
+    await androidPlugin?.requestExactAlarmsPermission();
+
     // Get data from the notification that launched the app
     final details = await _plugin.getNotificationAppLaunchDetails();
     final payload = details?.notificationResponse?.payload;
