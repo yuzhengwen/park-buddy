@@ -44,8 +44,8 @@ class ParkingSession {
 
       if (parts.length == 2) {
         // Parse as direct GPS doubles
-        final double? lat = double.tryParse(parts[0].trim());
-        final double? lon = double.tryParse(parts[1].trim());
+        final double? lat = double.tryParse(parts[1].trim());
+        final double? lon = double.tryParse(parts[0].trim());
 
         if (lat != null && lon != null) {
           // Assign directly to LatLng (Lat, Lng)
