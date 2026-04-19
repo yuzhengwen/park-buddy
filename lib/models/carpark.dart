@@ -1,6 +1,6 @@
 import 'package:latlong2/latlong.dart';
 
-import '../services/svy21_converter.dart';
+import '../utils/svy21_converter.dart';
 
 //car_park_no,address,x_coord,y_coord,car_park_type,type_of_parking_system,short_term_parking,free_parking,night_parking,car_park_decks,gantry_height,car_park_basement
 class Carpark {

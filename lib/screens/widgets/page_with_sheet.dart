@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:park_buddy/UI/bottom_sheet.dart';
+import 'package:park_buddy/screens/widgets/bottom_sheet.dart';
 
 /// Layout of a page with a draggable bottom sheet.
 class PageWithSheet extends StatelessWidget {

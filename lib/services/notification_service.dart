@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:park_buddy/screens/parking_session_detail_screen.dart';
-import 'package:park_buddy/utils/parking_service.dart';
+import 'package:park_buddy/services/parking_service.dart';
 import 'package:timezone/data/latest_10y.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
